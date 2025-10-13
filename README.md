@@ -64,6 +64,7 @@
         <li>Enviar mensaje de voz a un Grupo</li>
         <li>Reproducir audios pendientes </li>
         <li>Hacer una llamada a un Grupo</li>
+        <li>Responder una llamada de un Grupo</li>
         <li>Volver al Menú Principal</li>
       </ol>
   Ingrese el comando de su preferencia y siga las instrucciones presentadas en el aplicativo.
