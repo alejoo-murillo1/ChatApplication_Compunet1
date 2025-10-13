@@ -1,4 +1,4 @@
-# ChatApplication_CNet
+# ChatApplication_Compunet1
 <h2>Curso: Computación en Internet 1 - Universidad Icesi</h2>
 <h5>Santiago de Cali, Miércoles 15 de Octubre de 2025</h5>
 
