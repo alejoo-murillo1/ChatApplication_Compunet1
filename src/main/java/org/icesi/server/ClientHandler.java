@@ -69,6 +69,15 @@ public class ClientHandler implements Runnable{
                     else if (cmd.startsWith("CALL_REJECTED:")) {
                         handleCallRejected(cmd);
                     }
+                    else if (cmd.startsWith("GROUP_CALL:")) {
+                        handleGroupCall(cmd);
+                    }
+                    else if (cmd.startsWith("GROUP_CALL_ACCEPTED:")) {
+                        handleGroupCallAccepted(cmd);
+                    }
+                    else if (cmd.startsWith("GROUP_CALL_REJECTED:")) {
+                        handleGroupCallRejected(cmd);
+                    }
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -141,6 +150,56 @@ public class ClientHandler implements Runnable{
         }
     }
 
+    private void handleGroupCall(String cmd) {
+        String[] parts = cmd.split(":");
+        if (parts.length > 1) {
+            try {
+                int groupId = Integer.parseInt(parts[1]);
+                db.setUserStatus(userId, "in_call");
+
+                // Notificar a todos sobre la llamada grupal
+                server.broadcastToAll("GROUP_CALL_INCOMING:" + groupId + ":" + username);
+
+                System.out.println("[GROUP_CALL] ✓ #" + username + " inició llamada grupal #" + groupId);
+            } catch (NumberFormatException e) {
+                System.err.println("[GROUP_CALL] ✗ Error: " + e.getMessage());
+            }
+        }
+    }
+
+    private void handleGroupCallAccepted(String cmd) {
+        String[] parts = cmd.split(":");
+        if (parts.length > 1) {
+            try {
+                int groupId = Integer.parseInt(parts[1]);
+                db.setUserStatus(userId, "in_call");
+
+                // Notificar a todos en el grupo
+                server.broadcastToAll("GROUP_CALL_MEMBER_JOINED:" + groupId + ":" + username);
+
+                System.out.println("[GROUP_CALL] ✓ #" + username + " se unió a la llamada grupal #" + groupId);
+            } catch (NumberFormatException e) {
+                System.err.println("[GROUP_CALL] ✗ Error: " + e.getMessage());
+            }
+        }
+    }
+
+    private void handleGroupCallRejected(String cmd) {
+        String[] parts = cmd.split(":");
+        if (parts.length > 1) {
+            try {
+                int groupId = Integer.parseInt(parts[1]);
+                db.setUserStatus(userId, "online");
+
+                server.broadcastToAll("GROUP_CALL_REJECTED_BY:" + db.getGroupnameById(groupId) + ":" + username);
+
+                System.out.println("[GROUP_CALL] ✓ #" + username + " rechazó la llamada grupal de" + db.getGroupnameById(groupId));
+            } catch (NumberFormatException e) {
+                System.err.println("[GROUP_CALL] ✗ Error: " + e.getMessage());
+            }
+        }
+    }
+
     public void sendMessage(Message msg) throws IOException {
         out.writeObject(msg);
         out.flush();
@@ -154,5 +213,9 @@ public class ClientHandler implements Runnable{
         } catch (IOException e) {
             System.err.println("[HANDLER] Error cerrando socket: " + e.getMessage());
         }
+    }
+
+    public ObjectOutputStream getOut() {
+        return out;
     }
 }

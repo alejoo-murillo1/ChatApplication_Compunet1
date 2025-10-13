@@ -312,21 +312,41 @@ public class ChatClient {
     public void makeGroupCall(int groupId) {
         try {
             String callCmd = "GROUP_CALL:" + groupId;
-            if(groupVoiceMessages.containsKey(groupId)){
-                out.writeObject(callCmd);
-                out.flush();
-                System.out.println("[GROUP_CALL] ☎ Iniciando llamada grupal #" + groupId + "...");
 
-                if (udpClient != null) {
-                    udpClient.startCall(groupId, userId);
-                }
-            }else{
-                System.out.println("[ERROR] El id"+groupId+" no existe en el listado de grupos.");
+            out.writeObject(callCmd);
+            out.flush();
+            System.out.println("[GROUP_CALL] ☎ Iniciando llamada grupal #" + groupId + "...");
+
+            if (udpClient != null) {
+                udpClient.startCall(groupId, userId);
             }
-
-
         } catch (IOException e) {
             System.err.println("[ERROR] Iniciando llamada grupal: " + e.getMessage());
+        }
+    }
+
+    public void acceptGroupCall(int groupId) {
+        try {
+            String acceptCmd = "GROUP_CALL_ACCEPTED:" + groupId;
+            out.writeObject(acceptCmd);
+            out.flush();
+
+            if (udpClient != null) {
+                udpClient.startCall(groupId, userId);
+            }
+        } catch (IOException e) {
+            System.err.println("[ERROR] Aceptando llamada grupal: " + e.getMessage());
+        }
+    }
+
+    public void rejectGroupCall(int groupId) {
+        try {
+            String rejectCmd = "GROUP_CALL_REJECTED:" + groupId;
+            out.writeObject(rejectCmd);
+            out.flush();
+            System.out.println("[GROUP_CALL] Llamada grupal rechazada");
+        } catch (IOException e) {
+            System.err.println("[ERROR] Rechazando llamada grupal: " + e.getMessage());
         }
     }
 

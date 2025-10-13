@@ -293,7 +293,8 @@ public class ChatConsole {
             System.out.println("║ 4. Enviar audio al grupo       ║");
             System.out.println("║ 5. Reproducir audios de grupo  ║");
             System.out.println("║ 6. Hacer una llamada a grupo   ║");
-            System.out.println("║ 7. Volver al menú principal    ║");
+            System.out.println("║ 7. Responder una llamada de grupo║");
+            System.out.println("║ 8. Volver al menú principal    ║");
             System.out.println("╚════════════════════════════════╝");
             System.out.print("Seleccione una opción (1-7): ");
 
@@ -319,6 +320,9 @@ public class ChatConsole {
                     makeGroupCall();
                     break;
                 case "7":
+                    respondToGroupCall();
+                    break;
+                case "8":
                     inGroupMenu = false;
                     break;
                 default:
@@ -367,6 +371,44 @@ public class ChatConsole {
                     client.endCall();
                     break;
                 }
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("[INPUT] ✗ Ingrese un ID válido");
+        }
+    }
+
+    private void respondToGroupCall() {
+        System.out.println("\n╔════════════════════════════════╗");
+        System.out.println("║  RESPONDER LLAMADA DE GRUPO    ║");
+        System.out.println("╚════════════════════════════════╝");
+
+        System.out.print("[INPUT] ID del grupo: ");
+        try {
+            String input = scanner.nextLine().trim();
+            if (input.isEmpty()) {
+                System.out.println("[INPUT] ✗ Debe ingresar un ID");
+                return;
+            }
+
+            int groupId = Integer.parseInt(input);
+            System.out.print("[INPUT] ¿Aceptar? (si/no): ");
+            String response = scanner.nextLine().trim().toLowerCase();
+
+            if (response.equals("si") || response.equals("s")) {
+                client.acceptGroupCall(groupId);
+
+                System.out.println("\n[GROUP_CALL] ☎ En llamada grupal...");
+                System.out.println("[GROUP_CALL] Escriba 'fin' para terminar");
+
+                while (true) {
+                    String input2 = scanner.nextLine().trim();
+                    if (input2.equalsIgnoreCase("fin")) {
+                        client.endCall();
+                        break;
+                    }
+                }
+            } else {
+                client.rejectGroupCall(groupId);
             }
         } catch (NumberFormatException e) {
             System.out.println("[INPUT] ✗ Ingrese un ID válido");

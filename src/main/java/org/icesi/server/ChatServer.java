@@ -30,7 +30,7 @@ public class ChatServer {
 
     public void start() {
         System.out.println("╔════════════════════════════════╗");
-        System.out.println("║   SERVIDOR DE CHAT v1.0        ║");
+        System.out.println("║        SERVIDOR DE CHAT        ║");
         System.out.println("╚════════════════════════════════╝");
         System.out.println("[SERVER] ✓ Chat iniciado en puerto " + PORT);
         System.out.println("[SERVER] Esperando conexiones...\n");
@@ -85,6 +85,17 @@ public class ChatServer {
         if (udpServer != null) {
             udpServer.endCallPair(userId);
         }
+    }
+
+    public void broadcastToAll(String message) {
+        connectedClients.values().forEach(handler -> {
+            try {
+                handler.getOut().writeObject(message);
+                handler.getOut().flush();
+            } catch (IOException e) {
+                System.err.println("[SERVER] ✗ Error enviando broadcast: " + e.getMessage());
+            }
+        });
     }
 
     public static void main(String[] args) throws IOException {
