@@ -7,6 +7,7 @@ import org.icesi.model.VoiceMessage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 
 public class ClientHandler implements Runnable{
@@ -33,8 +34,13 @@ public class ClientHandler implements Runnable{
             // Recibir login
             username = (String) in.readObject();
             userId = db.registerUser(username);
-            db.setUserStatus(userId, "online");
-            server.registerClient(userId, this);
+
+            // Recibir puerto UDP del cliente
+            int udpPort = in.readInt();
+
+            updateUserStatus("online");
+            server.registerClient(userId, this, udpPort);
+
             out.writeObject("LOGIN_SUCCESS:" + userId);
             out.flush();
 
@@ -42,48 +48,68 @@ public class ClientHandler implements Runnable{
                 Object obj = in.readObject();
 
                 if (obj instanceof Message msg) {
-                    db.saveMessage(msg.getSenderId(), msg.getRecipientId(),
-                            msg.getContent(), msg.isGroup());
-                    server.broadcastMessage(msg);
-                    System.out.println("[MSG] " + username + " -> " +
-                            "Usuario " + msg.getRecipientId() + ": " + msg.getContent());
+                    handleMessage(msg);
                 }
                 else if (obj instanceof VoiceMessage voiceMsg) {
-                    db.saveVoiceMessage(voiceMsg.getSenderId(), voiceMsg.getRecipientId(),
-                            voiceMsg.getAudioData(), voiceMsg.isGroup());
-                    System.out.println("[VOICE] " + username + " envió mensaje de voz");
-
-                    ClientHandler recipient = server.getClient(voiceMsg.getRecipientId());
-                    if (recipient != null) {
-                        recipient.out.writeObject(voiceMsg);
-                        recipient.out.flush();
-                    }
+                    handleVoiceMessage(voiceMsg);
                 }
                 else if (obj instanceof String cmd) {
-                    if (cmd.startsWith("CALL:")) {
-                        handleCall(cmd);
-                    }
-                    else if (cmd.startsWith("CALL_ACCEPTED:")) {
-                        handleCallAccepted(cmd);
-                    }
-                    else if (cmd.startsWith("CALL_REJECTED:")) {
-                        handleCallRejected(cmd);
-                    }
-                    else if (cmd.startsWith("GROUP_CALL:")) {
-                        handleGroupCall(cmd);
-                    }
-                    else if (cmd.startsWith("GROUP_CALL_ACCEPTED:")) {
-                        handleGroupCallAccepted(cmd);
-                    }
-                    else if (cmd.startsWith("GROUP_CALL_REJECTED:")) {
-                        handleGroupCallRejected(cmd);
-                    }
+                    handleCommand(cmd);
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
-            System.err.println("[HANDLER] Desconexión del cliente: " + e.getMessage());
+            System.err.println("[HANDLER] Desconexión del cliente " + username + ": " + e.getMessage());
         } finally {
             cleanup();
+        }
+    }
+
+    private void handleMessage(Message msg) {
+        if (msg.isGroup()) {
+            db.saveGroupMessage(msg.getSenderId(), msg.getRecipientId(), msg.getContent());
+        } else {
+            db.savePrivateMessage(msg.getSenderId(), msg.getRecipientId(), msg.getContent());
+        }
+        server.broadcastMessage(msg);
+        System.out.println("[MSG] " + username + " -> " +
+                (msg.isGroup() ? "Grupo " : "Usuario ") + msg.getRecipientId() + ": " + msg.getContent());
+    }
+
+    private void handleVoiceMessage(VoiceMessage voiceMsg) {
+        if (voiceMsg.isGroup()) {
+            db.saveGroupVoiceMessage(voiceMsg.getSenderId(), voiceMsg.getRecipientId(), voiceMsg.getAudioData());
+        } else {
+            db.savePrivateVoiceMessage(voiceMsg.getSenderId(), voiceMsg.getRecipientId(), voiceMsg.getAudioData());
+        }
+        server.broadcastVoiceMessage(voiceMsg);
+        System.out.println("[VOICE] " + username + " envió mensaje de voz a " +
+                (voiceMsg.isGroup() ? "grupo " : "usuario ") + voiceMsg.getRecipientId());
+    }
+
+    private void handleCommand(String cmd) {
+        if (cmd.startsWith("CALL:")) {
+            handleCall(cmd);
+        }
+        else if (cmd.startsWith("CALL_ACCEPTED:")) {
+            handleCallAccepted(cmd);
+        }
+        else if (cmd.startsWith("CALL_REJECTED:")) {
+            handleCallRejected(cmd);
+        }
+        else if (cmd.startsWith("GROUP_CALL:")) {
+            handleGroupCall(cmd);
+        }
+        else if (cmd.startsWith("GROUP_CALL_ACCEPTED:")) {
+            handleGroupCallAccepted(cmd);
+        }
+        else if (cmd.startsWith("GROUP_CALL_REJECTED:")) {
+            handleGroupCallRejected(cmd);
+        }
+        else if (cmd.equals("END_CALL")) {
+            handleEndCall();
+        }
+        else if (cmd.startsWith("STATUS_UPDATE:")) {
+            handleStatusUpdate(cmd);
         }
     }
 
@@ -94,7 +120,7 @@ public class ClientHandler implements Runnable{
             ClientHandler recipient = server.getClient(recipientId);
             if (recipient != null) {
                 try {
-                    db.setUserStatus(userId, "in_call");
+                    updateUserStatus("in_call");
                     recipient.out.writeObject("INCOMING_CALL:" + userId + ":" + username);
                     recipient.out.flush();
                     System.out.println("[CALL] " + username + " está llamando a usuario " + recipientId);
@@ -119,7 +145,7 @@ public class ClientHandler implements Runnable{
             ClientHandler caller = server.getClient(callerId);
             if (caller != null) {
                 try {
-                    db.setUserStatus(userId, "in_call");
+                    updateUserStatus("in_call");
                     db.setUserStatus(callerId, "in_call");
                     caller.out.writeObject("CALL_ACCEPTED");
                     caller.out.flush();
@@ -150,17 +176,20 @@ public class ClientHandler implements Runnable{
         }
     }
 
+    private void handleEndCall() {
+        updateUserStatus("online");
+        server.endCall(userId);
+        System.out.println("[CALL] " + username + " finalizó la llamada");
+    }
+
     private void handleGroupCall(String cmd) {
         String[] parts = cmd.split(":");
         if (parts.length > 1) {
             try {
                 int groupId = Integer.parseInt(parts[1]);
-                db.setUserStatus(userId, "in_call");
-
-                // Notificar a todos sobre la llamada grupal
-                server.broadcastToAll("GROUP_CALL_INCOMING:" + groupId + ":" + username);
-
-                System.out.println("[GROUP_CALL] ✓ #" + username + " inició llamada grupal #" + groupId);
+                updateUserStatus("in_call");
+                server.startGroupCall(groupId, userId);
+                System.out.println("[GROUP_CALL] ✓ " + username + " inició llamada grupal #" + groupId);
             } catch (NumberFormatException e) {
                 System.err.println("[GROUP_CALL] ✗ Error: " + e.getMessage());
             }
@@ -172,12 +201,8 @@ public class ClientHandler implements Runnable{
         if (parts.length > 1) {
             try {
                 int groupId = Integer.parseInt(parts[1]);
-                db.setUserStatus(userId, "in_call");
-
-                // Notificar a todos en el grupo
-                server.broadcastToAll("GROUP_CALL_MEMBER_JOINED:" + groupId + ":" + username);
-
-                System.out.println("[GROUP_CALL] ✓ #" + username + " se unió a la llamada grupal #" + groupId);
+                updateUserStatus("in_call");
+                System.out.println("[GROUP_CALL] ✓ " + username + " se unió a la llamada grupal #" + groupId);
             } catch (NumberFormatException e) {
                 System.err.println("[GROUP_CALL] ✗ Error: " + e.getMessage());
             }
@@ -189,15 +214,25 @@ public class ClientHandler implements Runnable{
         if (parts.length > 1) {
             try {
                 int groupId = Integer.parseInt(parts[1]);
-                db.setUserStatus(userId, "online");
-
-                server.broadcastToAll("GROUP_CALL_REJECTED_BY:" + db.getGroupnameById(groupId) + ":" + username);
-
-                System.out.println("[GROUP_CALL] ✓ #" + username + " rechazó la llamada grupal de" + db.getGroupnameById(groupId));
+                updateUserStatus("online");
+                System.out.println("[GROUP_CALL] ✓ " + username + " rechazó la llamada grupal #" + groupId);
             } catch (NumberFormatException e) {
                 System.err.println("[GROUP_CALL] ✗ Error: " + e.getMessage());
             }
         }
+    }
+
+    private void handleStatusUpdate(String cmd) {
+        String[] parts = cmd.split(":");
+        if (parts.length > 1) {
+            String status = parts[1];
+            db.setUserStatus(userId, status);
+            server.broadcastStatusUpdate(userId, status);
+        }
+    }
+
+    private void updateUserStatus(String status) {
+        db.setUserStatus(userId, status);
     }
 
     public void sendMessage(Message msg) throws IOException {
@@ -205,10 +240,18 @@ public class ClientHandler implements Runnable{
         out.flush();
     }
 
+    public void sendVoiceMessage(VoiceMessage voiceMsg) throws IOException {
+        out.writeObject(voiceMsg);
+        out.flush();
+    }
+
     private void cleanup() {
-        db.setUserStatus(userId, "offline");
+        updateUserStatus("offline");
         server.unregisterClient(userId);
         try {
+            if (out != null) {
+                out.close();
+            }
             socket.close();
         } catch (IOException e) {
             System.err.println("[HANDLER] Error cerrando socket: " + e.getMessage());
@@ -217,5 +260,17 @@ public class ClientHandler implements Runnable{
 
     public ObjectOutputStream getOut() {
         return out;
+    }
+
+    public InetAddress getClientAddress() {
+        return socket.getInetAddress();
+    }
+
+    public Socket getSocket() {
+        return socket;
+    }
+
+    public String getUsername() {
+        return username;
     }
 }

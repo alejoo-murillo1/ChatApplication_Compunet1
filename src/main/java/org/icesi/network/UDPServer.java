@@ -7,21 +7,22 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
 public class UDPServer implements Runnable{
-    private DatagramSocket socket;
-    private int port;
-    private ChatServer chatServer;
-    private Map<Integer, InetSocketAddress> clientAddresses = new ConcurrentHashMap<>();
-    private Map<Integer, Integer> activeCallPairs = new ConcurrentHashMap<>();
+    private final DatagramSocket socket;
+    private final int port;
+    private final Map<Integer, InetSocketAddress> clientAddresses = new ConcurrentHashMap<>();
+    private final Map<Integer, Integer> activeCallPairs = new ConcurrentHashMap<>();
+    private final Map<Integer, Set<Integer>> groupCalls = new ConcurrentHashMap<>();
     private static final int BUFFER_SIZE = 4096;
 
-    public UDPServer(int port, ChatServer chatServer) throws SocketException {
+    public UDPServer(int port) throws SocketException {
         this.port = port;
-        this.chatServer = chatServer;
         this.socket = new DatagramSocket(port);
         this.socket.setReuseAddress(true);
     }
@@ -29,35 +30,67 @@ public class UDPServer implements Runnable{
     @Override
     public void run() {
         System.out.println("[UDP_SERVER] ✓ Servidor UDP escuchando en puerto " + port);
-        byte[] buffer = new byte[65535];
+        byte[] buffer = new byte[BUFFER_SIZE];
 
         while (true) {
             try {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
 
-                // Encontrar quién envió el paquete
                 InetSocketAddress senderAddr = new InetSocketAddress(packet.getAddress(), packet.getPort());
                 Integer senderId = findUserByAddress(senderAddr);
 
                 if (senderId != null) {
-                    // Verificar si el usuario está en una llamada activa
-                    if (activeCallPairs.containsKey(senderId)) {
-                        Integer recipientId = activeCallPairs.get(senderId);
-                        InetSocketAddress recipientAddr = clientAddresses.get(recipientId);
-
-                        if (recipientAddr != null) {
-                            // Retransmitir SOLO al otro usuario en la llamada
-                            DatagramPacket sendPacket = new DatagramPacket(
-                                    packet.getData(), packet.getLength(),
-                                    recipientAddr.getAddress(), recipientAddr.getPort()
-                            );
-                            socket.send(sendPacket);
-                        }
-                    }
+                    handleIncomingAudio(senderId, packet);
                 }
             } catch (IOException e) {
                 System.err.println("[UDP_SERVER] ✗ Error: " + e.getMessage());
+                break;
+            }
+        }
+    }
+
+    private void handleIncomingAudio(Integer senderId, DatagramPacket packet) {
+        // Verificar llamadas P2P
+        if (activeCallPairs.containsKey(senderId)) {
+            Integer recipientId = activeCallPairs.get(senderId);
+            forwardToUser(recipientId, packet);
+        }
+
+        // Verificar llamadas grupales
+        if (isInGroupCall(senderId)) {
+            forwardToGroup(senderId, packet);
+        }
+    }
+
+    private boolean isInGroupCall(int userId) {
+        return groupCalls.values().stream()
+                .anyMatch(members -> members.contains(userId));
+    }
+
+    private void forwardToGroup(int senderId, DatagramPacket originalPacket) {
+        groupCalls.forEach((groupId, members) -> {
+            if (members.contains(senderId)) {
+                members.forEach(memberId -> {
+                    if (memberId != senderId) { // No enviar al mismo usuario
+                        forwardToUser(memberId, originalPacket);
+                    }
+                });
+            }
+        });
+    }
+
+    private void forwardToUser(Integer userId, DatagramPacket originalPacket) {
+        InetSocketAddress recipientAddr = clientAddresses.get(userId);
+        if (recipientAddr != null) {
+            try {
+                DatagramPacket sendPacket = new DatagramPacket(
+                        originalPacket.getData(), originalPacket.getLength(),
+                        recipientAddr.getAddress(), recipientAddr.getPort()
+                );
+                socket.send(sendPacket);
+            } catch (IOException e) {
+                System.err.println("[UDP_SERVER] ✗ Error enviando a usuario " + userId + ": " + e.getMessage());
             }
         }
     }
@@ -81,7 +114,12 @@ public class UDPServer implements Runnable{
     public void unregisterClient(int userId) {
         clientAddresses.remove(userId);
         activeCallPairs.remove(userId);
-        activeCallPairs.values().removeIf(id -> id == userId);
+        activeCallPairs.values().removeIf(id -> id.equals(userId));
+
+        // Remover de llamadas grupales
+        groupCalls.values().forEach(members -> members.remove(userId));
+        groupCalls.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+
         System.out.println("[UDP_SERVER] ✓ Cliente #" + userId + " desregistrado");
     }
 
@@ -92,11 +130,9 @@ public class UDPServer implements Runnable{
     }
 
     public void startGroupCall(int groupId, Set<Integer> members) {
-        // Para llamadas de grupo, todos los miembros se comunican entre sí
-        for (Integer userId : members) {
-            activeCallPairs.put(userId, groupId);
-        }
-        System.out.println("[UDP_SERVER] ✓ Llamada grupal iniciada: Grupo #" + groupId + " con " + members.size() + " miembros");
+        groupCalls.put(groupId, Collections.synchronizedSet(new HashSet<>(members)));
+        System.out.println("[UDP_SERVER] ✓ Llamada grupal #" + groupId +
+                " con " + members.size() + " miembros");
     }
 
     public void endCallPair(int userId) {
@@ -104,6 +140,19 @@ public class UDPServer implements Runnable{
         if (otherUserId != null) {
             activeCallPairs.remove(otherUserId);
             System.out.println("[UDP_SERVER] ✓ Llamada finalizada entre #" + userId + " y #" + otherUserId);
+        }
+    }
+
+    public void endGroupCall(int groupId) {
+        Set<Integer> removed = groupCalls.remove(groupId);
+        if (removed != null) {
+            System.out.println("[UDP_SERVER] ✓ Llamada grupal #" + groupId + " finalizada");
+        }
+    }
+
+    public void cleanup() {
+        if (socket != null && !socket.isClosed()) {
+            socket.close();
         }
     }
 }

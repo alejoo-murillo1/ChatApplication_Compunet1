@@ -1,6 +1,8 @@
 package org.icesi.db;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DatabaseManager {
     private static final String URL = "jdbc:postgresql://localhost:5432/chat_app";
@@ -19,31 +21,44 @@ public class DatabaseManager {
                             "username VARCHAR(50) UNIQUE NOT NULL, " +
                             "status VARCHAR(20) DEFAULT 'offline')",
 
-                    "CREATE TABLE IF NOT EXISTS messages (" +
-                            "id SERIAL PRIMARY KEY, " +
-                            "sender_id INT REFERENCES users(id), " +
-                            "recipient_id INT REFERENCES users(id), " +
-                            "content TEXT NOT NULL, " +
-                            "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                            "is_group BOOLEAN DEFAULT false)",
-
-                    "CREATE TABLE IF NOT EXISTS voice_messages (" +
-                            "id SERIAL PRIMARY KEY, " +
-                            "sender_id INT REFERENCES users(id), " +
-                            "recipient_id INT REFERENCES users(id), " +
-                            "audio_data BYTEA NOT NULL, " +
-                            "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                            "is_group BOOLEAN DEFAULT false)",
-
                     "CREATE TABLE IF NOT EXISTS groups (" +
                             "id SERIAL PRIMARY KEY, " +
                             "name VARCHAR(50) NOT NULL, " +
                             "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
 
                     "CREATE TABLE IF NOT EXISTS group_members (" +
-                            "group_id INT REFERENCES groups(id), " +
-                            "user_id INT REFERENCES users(id), " +
-                            "PRIMARY KEY(group_id, user_id))"
+                            "group_id INT REFERENCES groups(id) ON DELETE CASCADE, " +
+                            "user_id INT REFERENCES users(id) ON DELETE CASCADE, " +
+                            "joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                            "PRIMARY KEY(group_id, user_id))",
+
+                    "CREATE TABLE IF NOT EXISTS private_messages (" +
+                            "id SERIAL PRIMARY KEY, " +
+                            "sender_id INT REFERENCES users(id) ON DELETE CASCADE, " +
+                            "recipient_id INT REFERENCES users(id) ON DELETE CASCADE, " +
+                            "content TEXT NOT NULL, " +
+                            "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+
+                    "CREATE TABLE IF NOT EXISTS group_messages (" +
+                            "id SERIAL PRIMARY KEY, " +
+                            "sender_id INT REFERENCES users(id) ON DELETE CASCADE, " +
+                            "group_id INT REFERENCES groups(id) ON DELETE CASCADE, " +
+                            "content TEXT NOT NULL, " +
+                            "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+
+                    "CREATE TABLE IF NOT EXISTS private_voice_messages (" +
+                            "id SERIAL PRIMARY KEY, " +
+                            "sender_id INT REFERENCES users(id) ON DELETE CASCADE, " +
+                            "recipient_id INT REFERENCES users(id) ON DELETE CASCADE, " +
+                            "audio_data BYTEA NOT NULL, " +
+                            "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+
+                    "CREATE TABLE IF NOT EXISTS group_voice_messages (" +
+                            "id SERIAL PRIMARY KEY, " +
+                            "sender_id INT REFERENCES users(id) ON DELETE CASCADE, " +
+                            "group_id INT REFERENCES groups(id) ON DELETE CASCADE, " +
+                            "audio_data BYTEA NOT NULL, " +
+                            "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
             };
 
             for (String sql : tables) {
@@ -78,34 +93,34 @@ public class DatabaseManager {
         return -1;
     }
 
-    public String getUsernameById(int userId){
-        try(Connection conn = getConnection()){
+    public String getUsernameById(int userId) {
+        try (Connection conn = getConnection()) {
             String sql = "SELECT username FROM users WHERE id = ?";
-            try(PreparedStatement stmt = conn.prepareStatement(sql)){
-                stmt.setInt(1,userId);
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, userId);
                 ResultSet rs = stmt.executeQuery();
-                if(rs.next()){
+                if (rs.next()) {
                     return rs.getString("username");
                 }
             }
-        }catch(SQLException e){
+        } catch (SQLException e) {
             System.err.println("[DB] Error obteniendo usuario: " + e.getMessage());
         }
         return "";
     }
 
-    public String getGroupnameById(int groupId){
-        try(Connection conn = getConnection()){
+    public String getGroupnameById(int groupId) {
+        try (Connection conn = getConnection()) {
             String sql = "SELECT name FROM groups WHERE id = ?";
-            try(PreparedStatement stmt = conn.prepareStatement(sql)){
-                stmt.setInt(1,groupId);
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, groupId);
                 ResultSet rs = stmt.executeQuery();
-                if(rs.next()){
+                if (rs.next()) {
                     return rs.getString("name");
                 }
             }
-        }catch(SQLException e){
-            System.err.println("[DB] Error obteniendo usuario: " + e.getMessage());
+        } catch (SQLException e) {
+            System.err.println("[DB] Error obteniendo grupo: " + e.getMessage());
         }
         return "";
     }
@@ -124,40 +139,66 @@ public class DatabaseManager {
     }
 
     // MENSAJES DE TEXTO
-    public void saveMessage(int senderId, int recipientId, String content, boolean isGroup) {
+    public void savePrivateMessage(int senderId, int recipientId, String content) {
         try (Connection conn = getConnection()) {
-            String sql = "INSERT INTO messages(sender_id, recipient_id, content, is_group) VALUES(?, ?, ?, ?)";
+            String sql = "INSERT INTO private_messages(sender_id, recipient_id, content) VALUES(?, ?, ?)";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setInt(1, senderId);
                 stmt.setInt(2, recipientId);
                 stmt.setString(3, content);
-                stmt.setBoolean(4, isGroup);
                 stmt.executeUpdate();
             }
         } catch (SQLException e) {
-            System.err.println("[DB] Error guardando mensaje: " + e.getMessage());
+            System.err.println("[DB] Error guardando mensaje privado: " + e.getMessage());
+        }
+    }
+
+    public void saveGroupMessage(int senderId, int groupId, String content) {
+        try (Connection conn = getConnection()) {
+            String sql = "INSERT INTO group_messages(sender_id, group_id, content) VALUES(?, ?, ?)";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, senderId);
+                stmt.setInt(2, groupId);
+                stmt.setString(3, content);
+                stmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            System.err.println("[DB] Error guardando mensaje grupal: " + e.getMessage());
         }
     }
 
     // MENSAJES DE VOZ
-    public void saveVoiceMessage(int senderId, int recipientId, byte[] audioData, boolean isGroup) {
+    public void savePrivateVoiceMessage(int senderId, int recipientId, byte[] audioData) {
         try (Connection conn = getConnection()) {
-            String sql = "INSERT INTO voice_messages(sender_id, recipient_id, audio_data, is_group) VALUES(?, ?, ?, ?)";
+            String sql = "INSERT INTO private_voice_messages(sender_id, recipient_id, audio_data) VALUES(?, ?, ?)";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setInt(1, senderId);
                 stmt.setInt(2, recipientId);
                 stmt.setBytes(3, audioData);
-                stmt.setBoolean(4, isGroup);
                 stmt.executeUpdate();
             }
         } catch (SQLException e) {
-            System.err.println("[DB] Error guardando mensaje de voz: " + e.getMessage());
+            System.err.println("[DB] Error guardando mensaje de voz privado: " + e.getMessage());
         }
     }
 
-    public byte[] getVoiceMessage(int messageId) {
+    public void saveGroupVoiceMessage(int senderId, int groupId, byte[] audioData) {
         try (Connection conn = getConnection()) {
-            String sql = "SELECT audio_data FROM voice_messages WHERE id=?";
+            String sql = "INSERT INTO group_voice_messages(sender_id, group_id, audio_data) VALUES(?, ?, ?)";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, senderId);
+                stmt.setInt(2, groupId);
+                stmt.setBytes(3, audioData);
+                stmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            System.err.println("[DB] Error guardando mensaje de voz grupal: " + e.getMessage());
+        }
+    }
+
+    public byte[] getPrivateVoiceMessage(int messageId) {
+        try (Connection conn = getConnection()) {
+            String sql = "SELECT audio_data FROM private_voice_messages WHERE id=?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setInt(1, messageId);
                 ResultSet rs = stmt.executeQuery();
@@ -166,7 +207,23 @@ public class DatabaseManager {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("[DB] Error obteniendo mensaje de voz: " + e.getMessage());
+            System.err.println("[DB] Error obteniendo mensaje de voz privado: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public byte[] getGroupVoiceMessage(int messageId) {
+        try (Connection conn = getConnection()) {
+            String sql = "SELECT audio_data FROM group_voice_messages WHERE id=?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, messageId);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    return rs.getBytes("audio_data");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("[DB] Error obteniendo mensaje de voz grupal: " + e.getMessage());
         }
         return null;
     }
@@ -175,6 +232,7 @@ public class DatabaseManager {
     public int createGroup(String groupName, int creatorId) {
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
+
             String groupSql = "INSERT INTO groups(name) VALUES(?) RETURNING id";
             int groupId = -1;
             try (PreparedStatement stmt = conn.prepareStatement(groupSql)) {
@@ -231,21 +289,78 @@ public class DatabaseManager {
         }
     }
 
-    public void displayHistory(int userId) {
+    // MÉTODOS AUXILIARES NUEVOS
+    public boolean isUserInGroup(int userId, int groupId) {
         try (Connection conn = getConnection()) {
-            String sql = "SELECT u.username, m.content, m.timestamp FROM messages m " +
-                    "JOIN users u ON m.sender_id = u.id WHERE m.recipient_id = ? OR m.sender_id = ? " +
-                    "ORDER BY m.timestamp DESC LIMIT 20";
+            String sql = "SELECT 1 FROM group_members WHERE user_id = ? AND group_id = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setInt(1, userId);
-                stmt.setInt(2, userId);
+                stmt.setInt(2, groupId);
                 ResultSet rs = stmt.executeQuery();
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            System.err.println("[DB] Error verificando membresía: " + e.getMessage());
+        }
+        return false;
+    }
+
+    public List<Integer> getGroupMembers(int groupId) {
+        List<Integer> members = new ArrayList<>();
+        try (Connection conn = getConnection()) {
+            String sql = "SELECT user_id FROM group_members WHERE group_id = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, groupId);
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    members.add(rs.getInt("user_id"));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("[DB] Error obteniendo miembros: " + e.getMessage());
+        }
+        return members;
+    }
+
+    // HISTORIAL MEJORADO
+    public void displayHistory(int userId) {
+        try (Connection conn = getConnection()) {
+            String privateSql = "SELECT 'PRIVADO' as type, u.username as sender_name, " +
+                    "pm.content, pm.timestamp, NULL as group_name " +
+                    "FROM private_messages pm " +
+                    "JOIN users u ON pm.sender_id = u.id " +
+                    "WHERE pm.recipient_id = ? OR pm.sender_id = ? " +
+                    "UNION ALL " +
+                    "SELECT 'GRUPO' as type, u.username as sender_name, " +
+                    "gm.content, gm.timestamp, g.name as group_name " +
+                    "FROM group_messages gm " +
+                    "JOIN users u ON gm.sender_id = u.id " +
+                    "JOIN groups g ON gm.group_id = g.id " +
+                    "JOIN group_members gmem ON g.id = gmem.group_id " +
+                    "WHERE gmem.user_id = ? " +
+                    "ORDER BY timestamp DESC LIMIT 20";
+
+            try (PreparedStatement stmt = conn.prepareStatement(privateSql)) {
+                stmt.setInt(1, userId);
+                stmt.setInt(2, userId);
+                stmt.setInt(3, userId);
+                ResultSet rs = stmt.executeQuery();
+
                 System.out.println("\n=== HISTORIAL DE MENSAJES ===");
                 boolean hasMessages = false;
                 while (rs.next()) {
                     hasMessages = true;
-                    System.out.println("[" + rs.getTimestamp("timestamp") + "] " +
-                            rs.getString("username") + ": " + rs.getString("content"));
+                    String type = rs.getString("type");
+                    String sender = rs.getString("sender_name");
+                    String content = rs.getString("content");
+                    String timestamp = rs.getTimestamp("timestamp").toString();
+                    String groupName = rs.getString("group_name");
+
+                    if ("PRIVADO".equals(type)) {
+                        System.out.println("[" + timestamp + "] " + sender + " (privado): " + content);
+                    } else {
+                        System.out.println("[" + timestamp + "] " + sender + " @" + groupName + ": " + content);
+                    }
                 }
                 if (!hasMessages) {
                     System.out.println("No hay mensajes");

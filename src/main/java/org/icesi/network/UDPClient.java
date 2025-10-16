@@ -7,10 +7,13 @@ import java.io.IOException;
 import java.net.*;
 
 public class UDPClient {
-    private final DatagramSocket socket;
+    private DatagramSocket socket;
     private final int udpPort;
     private volatile boolean inCall = false;
     private final InetAddress serverInetAddress;
+    private AudioRecorder recorder;
+    private AudioPlayer player;
+    private Thread recordThread, playThread;
 
     public UDPClient(String serverAddress, int udpPort) throws SocketException, UnknownHostException {
         this.socket = new DatagramSocket();
@@ -20,62 +23,91 @@ public class UDPClient {
     }
 
     public void startCall(int recipientId, int myUserId) {
-        this.inCall = true;
+        if (inCall) {
+            System.out.println("[UDP] Ya está en una llamada");
+            return;
+        }
+
+        // ✅ VERIFICAR SI EL SOCKET ESTÁ CERRADO
+        if (socket == null || socket.isClosed()) {
+            try {
+                socket = new DatagramSocket();  // Recrear si es necesario
+            } catch (SocketException e) {
+                System.err.println("[UDP] Error recreando socket: " + e.getMessage());
+                return;
+            }
+        }
+
+        inCall = true;
 
         System.out.println("[UDP] Iniciando streaming de audio...");
         System.out.println("[UDP] Micrófono: Puerto local " + socket.getLocalPort());
 
-        new Thread(() -> {
-            AudioRecorder recorder = new AudioRecorder();
-            AudioPlayer player = new AudioPlayer();
+        // Inicializar componentes de audio
+        this.recorder = new AudioRecorder();
+        this.player = new AudioPlayer();
 
-            // Thread para grabar y enviar
-            Thread recordThread = new Thread(() -> {
-                try {
-                    System.out.println("[AUDIO] ▶ Grabando audio...");
-                    while (inCall) {
-                        byte[] audioData = recorder.recordChunk();
-                        if (audioData != null && audioData.length > 0) {
-                            sendAudioPacket(audioData);
-                        }
+        // Thread para grabar y enviar CON CONTROL DE TASA
+        recordThread = new Thread(() -> {
+            try {
+                System.out.println("[AUDIO] ▶ Grabando audio...");
+                while (inCall) {
+                    byte[] audioData = recorder.recordChunk();
+                    if (audioData != null && audioData.length > 0) {
+                        sendAudioPacket(audioData);
                     }
-                    recorder.stop();
-                    System.out.println("[AUDIO] ⏹ Grabación detenida");
-                } catch (Exception e) {
-                    System.err.println("[AUDIO] ✗ Error grabando: " + e.getMessage());
+                    // Control de tasa: ~44.1kHz / 4096 bytes ≈ 10ms
+                    Thread.sleep(10);
                 }
-            });
+            } catch (Exception e) {
+                if (inCall) { // Solo loggear si fue un error inesperado
+                    System.err.println("[AUDIO] ✗ Error grabando: " + e.getMessage());
+                    inCall=false;
+                }
+            } finally {
+                if (recorder != null) {
+                    recorder.stop();
+                }
+            }
+        });
 
-            // Thread para recibir y reproducir
-            Thread playThread = new Thread(() -> {
-                try {
-                    System.out.println("[AUDIO] 🎧 Escuchando audio entrante...");
-                    byte[] buffer = new byte[4096];
-                    while (inCall) {
-                        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                        socket.setSoTimeout(500);
-                        try {
-                            socket.receive(packet);
-                            byte[] audioData = new byte[packet.getLength()];
-                            System.arraycopy(packet.getData(), 0, audioData, 0, packet.getLength());
+        // Thread para recibir y reproducir CON TIMEOUT CONTROLADO
+        playThread = new Thread(() -> {
+            try {
+                System.out.println("[AUDIO] 🎧 Escuchando audio entrante...");
+                byte[] buffer = new byte[4096];
+
+                while (inCall) {
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                    try {
+                        socket.setSoTimeout(1000); // Timeout de 1 segundo
+                        socket.receive(packet);
+
+                        byte[] audioData = new byte[packet.getLength()];
+                        System.arraycopy(packet.getData(), 0, audioData, 0, packet.getLength());
+
+                        if (audioData.length > 0) {
                             player.playChunk(audioData);
-                        } catch (SocketTimeoutException e) {
-                            // Timeout normal, continúa esperando
                         }
+                    } catch (SocketTimeoutException e) {
+
                     }
-                    player.stop();
-                    System.out.println("[AUDIO] 🔇 Audio detenido");
-                } catch (IOException e) {
+                }
+            } catch (IOException e) {
+                if (inCall) {
                     System.err.println("[AUDIO] ✗ Error recibiendo: " + e.getMessage());
                 }
-            });
+            } finally {
+                if (player != null) {
+                    player.cleanup();
+                }
+            }
+        });
 
-            recordThread.setName("AudioRecorder");
-            playThread.setName("AudioPlayer");
-
-            recordThread.start();
-            playThread.start();
-        }).start();
+        recordThread.setDaemon(true);
+        playThread.setDaemon(true);
+        recordThread.start();
+        playThread.start();
     }
 
     private void sendAudioPacket(byte[] audioData) {
@@ -90,8 +122,28 @@ public class UDPClient {
     }
 
     public void endCall() {
+        if (!inCall) return;
+
         inCall = false;
-        System.out.println("[CALL] ☎ Llamada finalizada");
+
+        // Esperar a que los threads terminen gracefuly
+        try {
+            if (recordThread != null && recordThread.isAlive()) {
+                recordThread.join(1000);
+            }
+            if (playThread != null && playThread.isAlive()) {
+                playThread.join(1000);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // Cerrar socket UDP
+        if (socket != null && !socket.isClosed()) {
+            socket.close();
+        }
+
+        System.out.println("[CALL] ☎ Llamada finalizada completamente");
     }
 
     public boolean isInCall() {
@@ -99,6 +151,6 @@ public class UDPClient {
     }
 
     public int getLocalPort() {
-        return socket.getLocalPort();
+        return socket != null ? socket.getLocalPort() : -1;
     }
 }

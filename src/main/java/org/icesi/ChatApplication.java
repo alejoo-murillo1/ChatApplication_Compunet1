@@ -14,8 +14,9 @@ public class ChatApplication {
                 System.out.println("╚════════════════════════════════╝");
                 ChatServer server = new ChatServer();
                 server.start();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 System.err.println("[ERROR] No se pudo iniciar el servidor: " + e.getMessage());
+                e.printStackTrace();
                 System.exit(1);
             }
         } else {

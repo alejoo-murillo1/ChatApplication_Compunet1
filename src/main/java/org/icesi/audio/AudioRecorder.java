@@ -5,7 +5,7 @@ import java.io.ByteArrayOutputStream;
 
 public class AudioRecorder {
     private TargetDataLine line;
-    private boolean recording = false;
+    private volatile boolean recording = false;
 
     public AudioRecorder() {
         try {
@@ -62,15 +62,16 @@ public class AudioRecorder {
             return new byte[0];
         }
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        byte[] buffer = new byte[4096];
-        long startTime = System.currentTimeMillis();
-        int totalBytesRead = 0;
-
         try {
+            line.flush(); // Limpiar buffer anterior
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            long endTime = System.currentTimeMillis() + durationMs;
+            int totalBytesRead = 0;
+
             System.out.println("[AUDIO] ▶ Grabando...");
 
-            while (System.currentTimeMillis() - startTime < durationMs) {
+            while (recording && System.currentTimeMillis() < endTime) {
                 try {
                     int numBytesRead = line.read(buffer, 0, buffer.length);
 
@@ -85,12 +86,12 @@ public class AudioRecorder {
             }
 
             System.out.println("[AUDIO] ✓ Grabación completada (" + totalBytesRead + " bytes)");
+            return baos.toByteArray();
 
         } catch (Exception e) {
             System.err.println("[AUDIO] ✗ Error grabando: " + e.getMessage());
+            return new byte[0];
         }
-
-        return baos.toByteArray();
     }
 
     public void stop() {

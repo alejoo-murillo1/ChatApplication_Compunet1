@@ -112,21 +112,26 @@ public class ChatConsole {
 
         client.listUsers();
 
-        System.out.print("\nIngrese nombre de usuario destinatario: ");
-        String recipient = scanner.nextLine().trim();
+        System.out.print("\nIngrese ID del destinatario: ");
+        try {
+            int recipientId = Integer.parseInt(scanner.nextLine().trim());
+            String username = client.getUsernameById(recipientId);
 
-        if (recipient.isEmpty()) {
-            System.out.println("[ERROR] El destinatario no puede estar vacío");
-            return;
-        }
+            if (username.isEmpty()) {
+                System.out.println("[ERROR] ID no válido");
+                return;
+            }
 
-        System.out.print("Ingrese su mensaje: ");
-        String message = scanner.nextLine().trim();
+            System.out.print("Mensaje para " + username + ": ");
+            String message = scanner.nextLine().trim();
 
-        if (message.isEmpty()) {
-            System.out.println("[ERROR] El mensaje no puede estar vacío");
-        } else {
-            client.sendMessage(recipient, message);
+            if (message.isEmpty()) {
+                System.out.println("[ERROR] El mensaje no puede estar vacío");
+            } else {
+                client.sendMessage(recipientId, message);
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("[ERROR] Ingrese un número válido");
         }
     }
 
@@ -137,17 +142,18 @@ public class ChatConsole {
 
         client.listUsers();
 
-        System.out.print("\nIngrese nombre de usuario destinatario: ");
-        String recipient = scanner.nextLine().trim();
-
-        if (recipient.isEmpty()) {
-            System.out.println("[ERROR] El destinatario no puede estar vacío");
-            return;
-        }
-
-        System.out.print("Duración de la grabación en segundos (máximo 30): ");
-
+        System.out.print("\nIngrese ID del destinatario: ");
         try {
+            int recipientId = Integer.parseInt(scanner.nextLine().trim());
+            String username = client.getUsernameById(recipientId);
+
+            if (username.isEmpty()) {
+                System.out.println("[ERROR] ID no válido");
+                return;
+            }
+
+            System.out.print("Duración de la grabación en segundos (máximo 30): ");
+
             String input = scanner.nextLine().trim();
             if (input.isEmpty()) {
                 System.out.println("[ERROR] Debe ingresar un número");
@@ -176,7 +182,7 @@ public class ChatConsole {
 
             if (audioData != null && audioData.length > 0) {
                 System.out.println("[AUDIO] Grabación completada (" + audioData.length + " bytes)");
-                client.sendVoiceMessage(recipient, audioData);
+                client.sendVoiceMessage(recipientId, audioData);
             } else {
                 System.out.println("[ERROR] No se grabó audio. Intente de nuevo.");
             }
@@ -192,29 +198,34 @@ public class ChatConsole {
 
         client.listUsers();
 
-        System.out.print("\nIngrese nombre de usuario a llamar: ");
-        String recipient = scanner.nextLine().trim();
+        System.out.print("\nIngrese ID del usuario a llamar: ");
+        try {
+            int recipientId = Integer.parseInt(scanner.nextLine().trim());
+            String username = client.getUsernameById(recipientId);
 
-        if (recipient.isEmpty()) {
-            System.out.println("[ERROR] El destinatario no puede estar vacío");
-            return;
-        }
-
-        System.out.println("\n╔════════════════════════════════╗");
-        System.out.println("║  LLAMADA EN PROGRESO           ║");
-        System.out.println("║  Escriba 'fin' para terminar   ║");
-        System.out.println("╚════════════════════════════════╝");
-
-        System.out.println("[LLAMADA] Llamando a " + recipient + "...");
-        client.makeCall(recipient);
-
-        while (true) {
-            String input = scanner.nextLine().trim();
-            if (input.equalsIgnoreCase("fin")) {
-                client.endCall();
-                System.out.println("[LLAMADA] Llamada finalizada");
-                break;
+            if (username.isEmpty()) {
+                System.out.println("[ERROR] ID no válido");
+                return;
             }
+
+            System.out.println("\n╔════════════════════════════════╗");
+            System.out.println("║  LLAMADA EN PROGRESO           ║");
+            System.out.println("║  Escriba 'fin' para terminar   ║");
+            System.out.println("╚════════════════════════════════╝");
+
+            System.out.println("[LLAMADA] Llamando a " + username + "...");
+            client.makeCall(recipientId);
+
+            while (true) {
+                String input = scanner.nextLine().trim();
+                if (input.equalsIgnoreCase("fin")) {
+                    client.endCall();
+                    System.out.println("[LLAMADA] Llamada finalizada");
+                    break;
+                }
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("[ERROR] Ingrese un ID válido");
         }
     }
 
@@ -254,7 +265,9 @@ public class ChatConsole {
             }
 
             int callerId = Integer.parseInt(input);
-            System.out.print("¿Desea aceptar la llamada? (si/no): ");
+            String callerName = client.getUsernameById(callerId);
+
+            System.out.print("¿Desea aceptar la llamada de " + callerName + "? (si/no): ");
             String response = scanner.nextLine().trim().toLowerCase();
 
             if (response.equals("si") || response.equals("s")) {
@@ -296,7 +309,7 @@ public class ChatConsole {
             System.out.println("║ 7. Responder una llamada de grupo║");
             System.out.println("║ 8. Volver al menú principal    ║");
             System.out.println("╚════════════════════════════════╝");
-            System.out.print("Seleccione una opción (1-7): ");
+            System.out.print("Seleccione una opción (1-8): ");
 
             String choice = scanner.nextLine().trim();
 
@@ -333,7 +346,7 @@ public class ChatConsole {
 
     private void playLastGroupVoiceMessage() {
         System.out.println("\n╔════════════════════════════════╗");
-        System.out.println("║     REPROUCIR AUDIOS GRUPALES    ║");
+        System.out.println("║     REPRODUCIR AUDIOS GRUPALES  ║");
         System.out.println("╚════════════════════════════════╝");
 
         client.listGroups();
@@ -391,7 +404,9 @@ public class ChatConsole {
             }
 
             int groupId = Integer.parseInt(input);
-            System.out.print("[INPUT] ¿Aceptar? (si/no): ");
+            String groupName = client.getGroupnameById(groupId);
+
+            System.out.print("[INPUT] ¿Aceptar llamada del grupo " + groupName + "? (si/no): ");
             String response = scanner.nextLine().trim().toLowerCase();
 
             if (response.equals("si") || response.equals("s")) {
@@ -524,5 +539,16 @@ public class ChatConsole {
         } catch (NumberFormatException e) {
             System.out.println("[ERROR] Ingrese un número válido");
         }
+    }
+
+    // Método auxiliar para obtener username por ID
+    private String getUsernameById(int userId) {
+        // Este método debería estar en DatabaseManager
+        return client.getUsernameById(userId);
+    }
+
+    private String getGroupnameById(int groupId) {
+        // Este método debería estar en DatabaseManager
+        return client.getGroupnameById(groupId);
     }
 }

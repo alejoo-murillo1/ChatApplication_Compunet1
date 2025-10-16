@@ -4,6 +4,7 @@ import javax.sound.sampled.*;
 
 public class AudioPlayer {
     private SourceDataLine line;
+    private final Object lock = new Object();
 
     public AudioPlayer() {
         try {
@@ -31,70 +32,82 @@ public class AudioPlayer {
     }
 
     public void playChunk(byte[] audioData) {
-        if (line == null || audioData == null) {
-            return;
-        }
-
-        try {
-            if (audioData.length > 0) {
-                int written = line.write(audioData, 0, audioData.length);
-                if (written != audioData.length) {
-                    System.out.println("[AUDIO] ⚠ Solo se escribieron " + written + " de " + audioData.length + " bytes");
-                }
+        synchronized(lock) {
+            if (line == null || audioData == null || audioData.length == 0) {
+                return;
             }
-        } catch (Exception e) {
-            System.err.println("[AUDIO] ✗ Error reproduciendo chunk: " + e.getMessage());
+
+            try {
+                // Esperar si el buffer está casi lleno
+                if (line.available() < audioData.length) {
+                    Thread.sleep(10);
+                }
+
+                int written = line.write(audioData, 0, audioData.length);
+                if (written < audioData.length) {
+                    System.out.println("[AUDIO] ⚠ Buffer lleno, algunos datos perdidos");
+                }
+            } catch (Exception e) {
+                System.err.println("[AUDIO] ✗ Error reproduciendo chunk: " + e.getMessage());
+            }
         }
     }
 
     public void playFull(byte[] audioData) {
-        if (line == null || audioData == null) {
-            System.err.println("[AUDIO] ✗ AudioPlayer no inicializado");
-            return;
-        }
-
-        try {
-            if (audioData.length == 0) {
-                System.err.println("[AUDIO] ✗ No hay datos de audio para reproducir");
+        synchronized(lock) {
+            if (line == null || audioData == null) {
+                System.err.println("[AUDIO] ✗ AudioPlayer no inicializado");
                 return;
             }
 
-            System.out.println("[AUDIO] ▶ Reproduciendo (" + audioData.length + " bytes)...");
+            try {
+                if (audioData.length == 0) {
+                    System.err.println("[AUDIO] ✗ No hay datos de audio para reproducir");
+                    return;
+                }
 
-            // Escribir todo el audio
-            int bytesWritten = 0;
-            int chunkSize = 4096;
+                System.out.println("[AUDIO] ▶ Reproduciendo (" + audioData.length + " bytes)...");
 
-            while (bytesWritten < audioData.length) {
-                int remainingBytes = audioData.length - bytesWritten;
-                int toWrite = Math.min(chunkSize, remainingBytes);
+                int bytesWritten = 0;
+                int chunkSize = 4096;
 
-                line.write(audioData, bytesWritten, toWrite);
-                bytesWritten += toWrite;
+                while (bytesWritten < audioData.length) {
+                    int remainingBytes = audioData.length - bytesWritten;
+                    int toWrite = Math.min(chunkSize, remainingBytes);
+
+                    line.write(audioData, bytesWritten, toWrite);
+                    bytesWritten += toWrite;
+                }
+
+                line.drain();
+                System.out.println("[AUDIO] ✓ Reproducción completada");
+
+            } catch (Exception e) {
+                System.err.println("[AUDIO] ✗ Error reproduciendo: " + e.getMessage());
             }
-
-            // Drain para asegurar que todo se reproduce
-            line.drain();
-            System.out.println("[AUDIO] ✓ Reproducción completada");
-
-        } catch (Exception e) {
-            System.err.println("[AUDIO] ✗ Error reproduciendo: " + e.getMessage());
         }
     }
 
     public void stop() {
-        if (line != null) {
-            try {
-                line.stop();
-                line.close();
-                System.out.println("[AUDIO] ✓ Reproductor detenido");
-            } catch (Exception e) {
-                System.err.println("[AUDIO] ✗ Error deteniendo reproductor: " + e.getMessage());
+        synchronized(lock) {
+            if (line != null) {
+                try {
+                    line.drain();
+                    line.stop();
+                    line.close();
+                    System.out.println("[AUDIO] ✓ Reproductor detenido");
+                } catch (Exception e) {
+                    System.err.println("[AUDIO] ✗ Error deteniendo reproductor: " + e.getMessage());
+                }
             }
         }
     }
 
     public boolean isPlaying() {
         return line != null && line.isRunning();
+    }
+
+    public void cleanup() {
+        stop();
     }
 }
