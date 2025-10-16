@@ -206,8 +206,7 @@ public class ChatClient {
             Message msg = new Message(userId, recipientId, content, false);
             out.writeObject(msg);
             out.flush();
-            db.savePrivateMessage(userId, recipientId, content);
-            System.out.println("[P2P_MSG] ✓ Mensaje enviado a: " + getUsernameById(recipientId));
+            System.out.println("[P2P_MSG] ✓ Mensaje enviado a ID " + recipientId);
         } catch (IOException e) {
             System.err.println("[ERROR] Enviando mensaje: " + e.getMessage());
         }
@@ -312,7 +311,6 @@ public class ChatClient {
             Message msg = new Message(userId, groupId, content, true);
             out.writeObject(msg);
             out.flush();
-            db.saveGroupMessage(userId, groupId, content);
             System.out.println("[GROUP_MSG] ✓ Mensaje enviado al grupo #" + groupId);
         } catch (IOException e) {
             System.err.println("[ERROR] Enviando mensaje al grupo: " + e.getMessage());
@@ -392,8 +390,8 @@ public class ChatClient {
         db.listAllUsers(userId);
     }
 
-    public int getUserId() {
-        return userId;
+    public void viewAudioHistory() {
+        db.displayAudioHistory(userId);
     }
 
     public String getUsername() {

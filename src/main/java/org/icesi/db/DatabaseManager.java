@@ -153,6 +153,54 @@ public class DatabaseManager {
         }
     }
 
+    public void displayAudioHistory(int userId) {
+        try (Connection conn = getConnection()) {
+            String audioSql = "SELECT 'PRIVADO_AUDIO' as type, u.username as sender_name, " +
+                    "NULL as content, pvm.timestamp, NULL as group_name, pvm.id as audio_id " +
+                    "FROM private_voice_messages pvm " +
+                    "JOIN users u ON pvm.sender_id = u.id " +
+                    "WHERE pvm.recipient_id = ? OR pvm.sender_id = ? " +
+                    "UNION ALL " +
+                    "SELECT 'GRUPO_AUDIO' as type, u.username as sender_name, " +
+                    "NULL as content, gvm.timestamp, g.name as group_name, gvm.id as audio_id " +
+                    "FROM group_voice_messages gvm " +
+                    "JOIN users u ON gvm.sender_id = u.id " +
+                    "JOIN groups g ON gvm.group_id = g.id " +
+                    "JOIN group_members gmem ON g.id = gmem.group_id " +
+                    "WHERE gmem.user_id = ? " +
+                    "ORDER BY timestamp DESC LIMIT 20";
+
+            try (PreparedStatement stmt = conn.prepareStatement(audioSql)) {
+                stmt.setInt(1, userId);
+                stmt.setInt(2, userId);
+                stmt.setInt(3, userId);
+                ResultSet rs = stmt.executeQuery();
+
+                System.out.println("\n=== HISTORIAL DE AUDIOS ===");
+                boolean hasAudios = false;
+                while (rs.next()) {
+                    hasAudios = true;
+                    String type = rs.getString("type");
+                    String sender = rs.getString("sender_name");
+                    String timestamp = rs.getTimestamp("timestamp").toString();
+                    String groupName = rs.getString("group_name");
+                    int audioId = rs.getInt("audio_id");
+
+                    if ("PRIVADO_AUDIO".equals(type)) {
+                        System.out.println("[" + timestamp + "] " + sender + " (audio privado) - ID: " + audioId);
+                    } else {
+                        System.out.println("[" + timestamp + "] " + sender + " @" + groupName + " (audio) - ID: " + audioId);
+                    }
+                }
+                if (!hasAudios) {
+                    System.out.println("No hay mensajes de audio");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("[DB] Error mostrando historial de audios: " + e.getMessage());
+        }
+    }
+
     public void saveGroupMessage(int senderId, int groupId, String content) {
         try (Connection conn = getConnection()) {
             String sql = "INSERT INTO group_messages(sender_id, group_id, content) VALUES(?, ?, ?)";

@@ -262,10 +262,6 @@ public class ClientHandler implements Runnable{
         return out;
     }
 
-    public InetAddress getClientAddress() {
-        return socket.getInetAddress();
-    }
-
     public Socket getSocket() {
         return socket;
     }

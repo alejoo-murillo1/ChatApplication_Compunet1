@@ -60,47 +60,30 @@ public class ChatConsole {
             System.out.println("║ 1. Enviar mensaje de texto     ║");
             System.out.println("║ 2. Enviar mensaje de voz       ║");
             System.out.println("║ 3. Hacer una llamada           ║");
-            System.out.println("║ 4. Ver historial               ║");
-            System.out.println("║ 5. Escuchar último audio       ║");
-            System.out.println("║ 6. Ver mensajes de voz         ║");
-            System.out.println("║ 7. Responder llamada entrante  ║");
-            System.out.println("║ 8. Gestionar Grupos            ║");
-            System.out.println("║ 9. Salir                       ║");
+            System.out.println("║ 4. Ver historial de TEXTOS     ║");
+            System.out.println("║ 5. Ver historial de AUDIOS     ║");
+            System.out.println("║ 6. Escuchar último audio       ║");
+            System.out.println("║ 7. Ver mensajes de voz         ║");
+            System.out.println("║ 8. Responder llamada entrante  ║");
+            System.out.println("║ 9. Gestionar Grupos            ║");
+            System.out.println("║ 10. Salir                      ║");
             System.out.println("╚════════════════════════════════╝");
-            System.out.print("Seleccione una opción (1-9): ");
+            System.out.print("Seleccione una opción (1-10): ");
 
             String choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1":
-                    sendTextMessage();
-                    break;
-                case "2":
-                    sendVoiceMessage();
-                    break;
-                case "3":
-                    makeCall();
-                    break;
-                case "4":
-                    viewHistory();
-                    break;
-                case "5":
-                    playLastVoiceMessage();
-                    break;
-                case "6":
-                    listVoiceMessages();
-                    break;
-                case "7":
-                    respondToCall();
-                    break;
-                case "8":
-                    showGroupMenu();
-                    break;
-                case "9":
-                    logout();
-                    break;
-                default:
-                    System.out.println("[ERROR] Opción no válida. Intente de nuevo.");
+                case "1": sendTextMessage(); break;
+                case "2": sendVoiceMessage(); break;
+                case "3": makeCall(); break;
+                case "4": viewHistory(); break;
+                case "5": viewAudioHistory(); break;
+                case "6": playLastVoiceMessage(); break;
+                case "7": listVoiceMessages(); break;
+                case "8": respondToCall(); break;
+                case "9": showGroupMenu(); break;
+                case "10": logout();break;
+                default: System.out.println("[ERROR] Opción no válida. Intente de nuevo.");
             }
         }
     }
@@ -133,6 +116,13 @@ public class ChatConsole {
         } catch (NumberFormatException e) {
             System.out.println("[ERROR] Ingrese un número válido");
         }
+    }
+
+    private void viewAudioHistory() {
+        System.out.println("\n╔════════════════════════════════╗");
+        System.out.println("║      HISTORIAL DE AUDIOS       ║");
+        System.out.println("╚════════════════════════════════╝");
+        client.viewAudioHistory();
     }
 
     private void sendVoiceMessage() {

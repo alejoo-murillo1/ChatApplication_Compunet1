@@ -28,26 +28,19 @@ public class UDPClient {
             return;
         }
 
-        // ✅ VERIFICAR SI EL SOCKET ESTÁ CERRADO
-        if (socket == null || socket.isClosed()) {
-            try {
-                socket = new DatagramSocket();  // Recrear si es necesario
-            } catch (SocketException e) {
-                System.err.println("[UDP] Error recreando socket: " + e.getMessage());
-                return;
-            }
+        // ✅ VERIFICAR que el socket esté usable
+        if (socket.isClosed()) {
+            System.err.println("[UDP] ERROR: Socket UDP cerrado, no se puede iniciar llamada");
+            return;
         }
 
-        inCall = true;
-
+        this.inCall = true;
         System.out.println("[UDP] Iniciando streaming de audio...");
-        System.out.println("[UDP] Micrófono: Puerto local " + socket.getLocalPort());
 
-        // Inicializar componentes de audio
         this.recorder = new AudioRecorder();
         this.player = new AudioPlayer();
 
-        // Thread para grabar y enviar CON CONTROL DE TASA
+        // Threads de audio (código igual que antes)
         recordThread = new Thread(() -> {
             try {
                 System.out.println("[AUDIO] ▶ Grabando audio...");
@@ -56,13 +49,11 @@ public class UDPClient {
                     if (audioData != null && audioData.length > 0) {
                         sendAudioPacket(audioData);
                     }
-                    // Control de tasa: ~44.1kHz / 4096 bytes ≈ 10ms
                     Thread.sleep(10);
                 }
             } catch (Exception e) {
-                if (inCall) { // Solo loggear si fue un error inesperado
+                if (inCall) {
                     System.err.println("[AUDIO] ✗ Error grabando: " + e.getMessage());
-                    inCall=false;
                 }
             } finally {
                 if (recorder != null) {
@@ -71,26 +62,22 @@ public class UDPClient {
             }
         });
 
-        // Thread para recibir y reproducir CON TIMEOUT CONTROLADO
         playThread = new Thread(() -> {
             try {
                 System.out.println("[AUDIO] 🎧 Escuchando audio entrante...");
                 byte[] buffer = new byte[4096];
-
                 while (inCall) {
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                     try {
-                        socket.setSoTimeout(1000); // Timeout de 1 segundo
+                        socket.setSoTimeout(1000);
                         socket.receive(packet);
-
                         byte[] audioData = new byte[packet.getLength()];
                         System.arraycopy(packet.getData(), 0, audioData, 0, packet.getLength());
-
                         if (audioData.length > 0) {
                             player.playChunk(audioData);
                         }
                     } catch (SocketTimeoutException e) {
-
+                        continue;
                     }
                 }
             } catch (IOException e) {
@@ -126,7 +113,6 @@ public class UDPClient {
 
         inCall = false;
 
-        // Esperar a que los threads terminen gracefuly
         try {
             if (recordThread != null && recordThread.isAlive()) {
                 recordThread.join(1000);
@@ -138,12 +124,7 @@ public class UDPClient {
             Thread.currentThread().interrupt();
         }
 
-        // Cerrar socket UDP
-        if (socket != null && !socket.isClosed()) {
-            socket.close();
-        }
-
-        System.out.println("[CALL] ☎ Llamada finalizada completamente");
+        System.out.println("[CALL] ☎ Llamada finalizada (socket listo para reusar)");
     }
 
     public boolean isInCall() {
