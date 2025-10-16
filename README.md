@@ -36,12 +36,13 @@
   Cuando la pantalla principal empieza su ejecución, le pedirá la dirección IP del Server,
   este es <em>Localhost</em> por defecto. Oprima <em>Enter</em> para continuar.
   
-  Una vez completado el paso anterior, se desplegará el menú principal con 9 opciones:
+  Una vez completado el paso anterior, se desplegará el menú principal con 10 opciones:
   <ol>
     <li>Enviar mensaje de texto</li>
     <li>Enviar mensaje de voz</li>
     <li>Hacer una llamada</li>
-    <li>Ver Historial</li>
+    <li>Ver Historial de Mensajes</li>
+    <li>Ver Historial de Audios</li>
     <li>Escuchar Audios Pendientes</li>
     <li>Consultar mensajes de voz</li>
     <li>Responder llamada entrante</li>
@@ -56,7 +57,7 @@
 <section>
     <h2>Menú de Grupos</h2>
     <p>
-      La lista de 7 opciones que le aparecerá es la siguiente:
+      La lista de 8 opciones que le aparecerá es la siguiente:
       <ol>
         <li>Crear Grupo</li>
         <li>Agregar Miembro a unGrupo</li>
