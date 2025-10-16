@@ -1,4 +1,4 @@
-# ChatApplication_CNet
+# ChatApplication_Compunet1
 <h2>Curso: Computación en Internet 1 - Universidad Icesi</h2>
 <h5>Santiago de Cali, Miércoles 15 de Octubre de 2025</h5>
 
@@ -64,6 +64,7 @@
         <li>Enviar mensaje de voz a un Grupo</li>
         <li>Reproducir audios pendientes </li>
         <li>Hacer una llamada a un Grupo</li>
+        <li>Responder una llamada de un Grupo</li>
         <li>Volver al Menú Principal</li>
       </ol>
   Ingrese el comando de su preferencia y siga las instrucciones presentadas en el aplicativo.
