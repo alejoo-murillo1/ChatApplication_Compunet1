@@ -1,0 +1,23 @@
+{
+  "name": "ChatApplication_Compunet1",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack serve",
+    "build": "webpack"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "html-webpack-plugin": "^5.6.4",
+    "serve": "^14.2.5"
+  },
+  "devDependencies": {
+    "css-loader": "^7.1.2",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.102.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
+  }
+}
