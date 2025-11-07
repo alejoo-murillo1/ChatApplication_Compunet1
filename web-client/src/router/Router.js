@@ -1,23 +1,21 @@
 export class Router {
-  constructor(rootElement, routes) {
-    this.rootElement = rootElement;
+  constructor(root, routes) {
+    this.root = root;
     this.routes = routes;
-    window.onpopstate = () => this.render(window.location.pathname);
+    window.onpopstate = () => this.load(window.location.pathname);
   }
 
   navigateTo(path) {
-    window.history.pushState({}, "", path);
-    this.render(path);
+    history.pushState({}, "", path);
+    this.load(path);
   }
 
-  render(path) {
-    const PageClass = this.routes[path];
-    if (!PageClass) {
-      this.rootElement.innerHTML = "<h2>Página no encontrada</h2>";
-      return;
+  load(path) {
+    const route = this.routes.find(r => r.path === path);
+    if (route) {
+      this.root.innerHTML = "";
+      const page = new route.component(this);
+      this.root.appendChild(page.render());
     }
-    const page = new PageClass(this);
-    this.rootElement.innerHTML = "";
-    this.rootElement.appendChild(page.render());
   }
 }

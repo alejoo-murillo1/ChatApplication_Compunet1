@@ -1,9 +1,9 @@
 import { Menu } from "../components/Menu.js";
-import { UserList } from "../components/UserList.js";
+import { GroupList } from "../components/GroupList.js";
 import { Chat } from "../components/Chat.js";
 import { MessageInput } from "../components/MessageInput.js";
 
-export class ChatPage {
+export class GroupPage {
   constructor(router) {
     this.router = router;
   }
@@ -14,16 +14,18 @@ export class ChatPage {
     const container = document.createElement("div");
     container.classList.add("container");
 
-    const sidebar = new UserList(this.router).render();
+    const sidebar = new GroupList(this.router).render();
     const chatArea = document.createElement("div");
     chatArea.classList.add("chat-area");
     chatArea.innerHTML = `
-      <div class="top-chat sidebar-text">Chat con user_n</div>
+      <div class="top-chat sidebar-text">Chat con grupo_n</div>
     `;
+
+    const content = document.createElement("div");
+    content.classList.add("chat-area");
 
     const header = new Menu(this.router).render();
     const chat = new Chat().render();
-
 
     chatArea.append(chat);
     container.append(sidebar, chatArea);
