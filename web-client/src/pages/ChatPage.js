@@ -30,9 +30,10 @@ export class ChatPage {
       chatArea.innerHTML = `
         <div class="top-chat sidebar-text">Chat con ${username}</div>
       `;
-      const chat = new Chat().render();
+      const chat = new Chat(this.selectedUser).render();
       chatArea.append(chat);
     };
+
 
     // pasamos el callback al crear el UserList
     const sidebar = new UserList(this.router, onUserSelected).render();

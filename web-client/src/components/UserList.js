@@ -33,11 +33,10 @@ export class UserList {
       
       if (status === "ok") {
         const users = data.users || [];
-
         const user = sessionStorage.getItem("username") || "Invitado";
         const otherUsers = users.filter(u => u !== user);
         
-        content = otherUsers.map(u => `<div class="user">${u}</div>`).join("");
+        content = otherUsers.map(u => `<div class="user" data-username="${u}">${u}</div>`).join("");
       } 
       else if (status === "warning") {
         content = `<p class="light-text">No hay más usuarios conectados</p>`;
@@ -48,15 +47,23 @@ export class UserList {
 
       div.innerHTML = `
         <h3 class="sidebar-text">Usuarios conectados</h3>
-        ${content}
+        <div class="user-list">
+          ${content}
+        </div>
         <p class="light-text">Selecciona un usuario para enviarle un mensaje</p>
       `;
-    });
 
-    div.querySelectorAll(".user").forEach(el => {
-      el.addEventListener("click", () => {
-        const username = el.textContent;
-        this.onUserSelected(username); // Llamamos al callback de ChatPage
+      // Escucha de clicks en los usuarios
+      div.querySelectorAll(".user").forEach(el => {
+        el.addEventListener("click", () => {
+          // Quitar el estado activo anterior
+          div.querySelectorAll(".user").forEach(u => u.classList.remove("active"));
+          // Activar el usuario actual
+          el.classList.add("active");
+
+          const username = el.dataset.username;
+          this.onUserSelected(username);
+        });
       });
     });
 

@@ -1,7 +1,8 @@
 import { MessageInput } from "./MessageInput.js";
 
 export class Chat {
-  constructor() {
+  constructor(receiver) {
+    this.receiver = receiver;
     this.messages = [];
   }
 
@@ -15,7 +16,7 @@ export class Chat {
 
     // contenedor de mensajes
     this.div = document.createElement("div");
-    this.div.classList.add("chat");
+    this.div.classList.add("msg-container");
     this.div.style.flex = "1";
     this.div.style.padding = "10px";
     this.div.style.overflowY = "auto";
