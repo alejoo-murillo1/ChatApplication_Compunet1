@@ -1,5 +1,7 @@
 package services;
 
+import java.util.List;
+
 import daos.IDao;
 import daos.UserDao;
 import model.User;
@@ -13,14 +15,19 @@ public class ServerServices {
     }
 
     synchronized public User registerUser(User newUser) {
-        if(usersDao.findAll().contains(newUser)){
+        if(usersDao.findAll().contains(newUser.getName())){
             usersDao.update(newUser);
-            System.out.println("The user " + newUser.getName() + "is already registered. Online status updated: online = " + newUser.isOnline());
+            System.out.println("The user " + newUser.getName() + " is already registered. Online status updated: online = " + newUser.isOnline());
         } else {
             usersDao.save(newUser);
-            System.out.println("The new user " + newUser.getName() + "was registered");
+            System.out.println("The new user " + newUser.getName() + " was registered");
         }
 
         return usersDao.finById(newUser.getName());
+    }
+
+    synchronized public List<String> getOnlineUsers() {
+        System.out.println("Getting online users registered...");
+        return usersDao.findAll();
     }
 }

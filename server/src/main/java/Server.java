@@ -4,6 +4,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
@@ -86,7 +87,7 @@ public class Server {
 
                     if(newUser != null){
                         resp.setstatus("ok");
-                        resp.setData(getAsJsonObject(newUser));
+                        resp.setData(gson.toJsonTree(newUser).getAsJsonObject());
                     }
                 } catch (Exception e) {
                     resp.setstatus("error");
@@ -94,6 +95,28 @@ public class Server {
                     return resp;
                 }
                 break;
+
+            case "get_online_users":
+                try {
+                    List<String> namesOnlineUsers = services.getOnlineUsers();
+                    System.out.println(namesOnlineUsers.toString());
+
+                    if(namesOnlineUsers.size() > 1){
+                        resp.setstatus("ok");
+                        resp.setData(
+                            gson.toJsonTree(Map.of("users", namesOnlineUsers)).getAsJsonObject()
+                        );
+                    } else {
+                        resp.setstatus("warning");
+                        resp.setData(gson.toJsonTree(Map.of("message", "Only one user registered")).getAsJsonObject());
+                    }
+                } catch (Exception e) {
+                    resp.setstatus("error");
+                    resp.setData(gson.toJsonTree(Map.of("message", "Get users online failed")).getAsJsonObject());
+                    return resp;
+                }
+                break;
+                
             default:
                 resp.setstatus("error");
                 resp.setData(gson.toJsonTree(Map.of("message", "Unknown action")).getAsJsonObject());
@@ -101,10 +124,6 @@ public class Server {
         }
         
         return resp;
-    }
-
-    private JsonObject getAsJsonObject(User newUser) {
-        return gson.toJsonTree(newUser).getAsJsonObject();
     }
 
 }
