@@ -7,7 +7,7 @@ export class MessageInput {
     const div = document.createElement("div");
     div.classList.add("message-input");
     div.innerHTML = `
-      <input id="msg" type="text" placeholder="Escribe un mensaje">
+      <input id="msg" class="font-text-input" type="text" placeholder="Escribe un mensaje">
       <button id="send" class="button-on-off" disabled>Enviar</button>
     `;
 

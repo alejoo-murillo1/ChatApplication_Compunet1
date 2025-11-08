@@ -84,13 +84,6 @@ header {
   gap: 10px;
 }
 
-.message-input input {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 20px;
-  outline: none;
-}
 
 #welcome {
   color: #545454;
@@ -116,7 +109,7 @@ header {
   height: 500px;
 }
 
-#username {
+.font-text-input {
   width: 400px;
   height: 42px;
   border: 2px solid #737373;
@@ -124,14 +117,11 @@ header {
   color: #737373;
   font-family: 'Segoe UI', sans-serif;
   font-size: 15px;
-  text-align: center;
+  text-align: left;
   outline: none;
   box-sizing: border-box;
-}
-
-#username::placeholder {
-  color: #737373;
-  opacity: 0.7;
+  padding: 15px;
+  flex: 1;
 }
 
 .button-on-off {
