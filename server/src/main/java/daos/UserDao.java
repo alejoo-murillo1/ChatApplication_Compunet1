@@ -16,13 +16,27 @@ public class UserDao implements IDao<String, User> {
     }
 
     @Override
-    public List<String> findAll() {
+    public List<String> findAllKeys() {
         List<String> lista = new ArrayList<>();
 
         for (Map.Entry<String, User> entry : users.entrySet()) {
             User user = entry.getValue();
             if (user.isOnline()) {
                 lista.add(entry.getKey());
+            }
+        }
+
+        return lista;
+    }
+
+    @Override
+    public List<User> findAllValues() {
+        List<User> lista = new ArrayList<>();
+
+        for (Map.Entry<String, User> entry : users.entrySet()) {
+            User user = entry.getValue();
+            if (user.isOnline()) {
+                lista.add(user);
             }
         }
 

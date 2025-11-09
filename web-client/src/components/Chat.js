@@ -6,7 +6,7 @@ export class Chat {
     this.messages = [];
   }
 
-  render() {
+  render() {  
     // contenedor principal del chat (mensajes + input)
     this.wrapper = document.createElement("div");
     this.wrapper.classList.add("chat-wrapper");

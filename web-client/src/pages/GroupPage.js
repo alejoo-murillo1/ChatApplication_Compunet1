@@ -6,6 +6,7 @@ import { MessageInput } from "../components/MessageInput.js";
 export class GroupPage {
   constructor(router) {
     this.router = router;
+    this.selectedGroup;
   }
 
   render() {
@@ -14,20 +15,29 @@ export class GroupPage {
     const container = document.createElement("div");
     container.classList.add("container");
 
-    const sidebar = new GroupList(this.router).render();
-    const chatArea = document.createElement("div");
-    chatArea.classList.add("chat-area");
-    chatArea.innerHTML = `
-      <div class="top-chat sidebar-text">Chat con grupo_n</div>
-    `;
-
-    const content = document.createElement("div");
-    content.classList.add("chat-area");
-
     const header = new Menu(this.router).render();
-    const chat = new Chat().render();
+    const chatArea = document.createElement("div");
+    chatArea.classList.add("chat")
 
-    chatArea.append(chat);
+    chatArea.innerHTML = `
+    <div class="no-user-selected">
+      <p class="light-text">No ha seleccionado ningún grupo</p>
+    </div>`;
+
+    // callback cuando se selecciona un grupo
+    const onGroupSelected = (groupName) => {
+      this.selectedGroup = groupName;
+      chatArea.innerHTML = `
+        <div class="top-chat sidebar-text">Chat ${groupName}</div>
+      `;
+      const chat = new Chat(this.groupName).render();
+      chatArea.append(chat);
+    };
+
+
+    // pasamos el callback al crear el UserList
+    const sidebar = new GroupList(this.router, onGroupSelected).render();
+
     container.append(sidebar, chatArea);
     box.append(header, container);
 

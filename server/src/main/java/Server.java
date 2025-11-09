@@ -12,7 +12,7 @@ import com.google.gson.JsonObject;
 
 import dtos.Request;
 import dtos.Response;
-import model.User;
+import model.*;
 import services.ServerServices;
 
 public class Server {
@@ -116,7 +116,28 @@ public class Server {
                     return resp;
                 }
                 break;
-                
+
+            case "get_user_groups":
+                try {
+                    String username = rq.getData().get("username").getAsString();
+                    List<Group> userGroups = services.getUserGroups(username);
+                    System.out.println(userGroups.toString());
+
+                    if(userGroups.size() > 1){
+                        resp.setstatus("ok");
+                        resp.setData(
+                            gson.toJsonTree(Map.of("userGroups", userGroups)).getAsJsonObject()
+                        );
+                    } else {
+                        resp.setstatus("warning");
+                        resp.setData(gson.toJsonTree(Map.of("message", username + " is not a member of any group")).getAsJsonObject());
+                    }
+                } catch (Exception e) {
+                    resp.setstatus("error");
+                    resp.setData(gson.toJsonTree(Map.of("message", "Get groups failed")).getAsJsonObject());
+                    return resp;
+                }
+                break;    
             default:
                 resp.setstatus("error");
                 resp.setData(gson.toJsonTree(Map.of("message", "Unknown action")).getAsJsonObject());

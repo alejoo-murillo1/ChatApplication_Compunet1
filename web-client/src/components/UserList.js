@@ -7,15 +7,24 @@ export class UserList {
   }
 
   async fetchUsers() {
-  try {
-    const response = await axios.get("http://localhost:3001/users");
-    return response.data;
+    try {
+      const response = await axios.get("http://localhost:3001/users");
 
-  } catch (error) {
-    console.error("Error al obtener usuarios:", error);
-    return { status: "error", data: { message: "Error al conectar con el servidor" } };
+      console.log("Respuesta del proxy:", response.data);
+
+      if (response.data.status === "ok") {
+        console.log("Usuarios obtenidos:", response.data.body);
+      } else if (response.data.status === "warning"){
+        console.log("Solo hay un usuario online");
+      }
+
+      return response.data;
+
+    } catch (error) {
+      console.error("Error al obtener usuarios:", error);
+      return { status: "error", data: { message: "Error al conectar con el servidor" } };
+    }
   }
-}
 
   render() {
     const div = document.createElement("div");
@@ -61,8 +70,8 @@ export class UserList {
           // Activar el usuario actual
           el.classList.add("active");
 
-          const username = el.dataset.username;
-          this.onUserSelected(username);
+          const userSelected = el.dataset.username;
+          this.onUserSelected(userSelected);
         });
       });
     });
