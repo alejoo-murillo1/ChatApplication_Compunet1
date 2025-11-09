@@ -45,9 +45,12 @@ export class GroupList {
       let content = "";
       
       if (status === "ok") {
-        const groups = data.groups || [];
-        
-        content = groups.map(u => `<div class="group" data-username="${u}">${u}</div>`).join("");
+        const groups = data.userGroups || [];
+
+        // Puedes mostrar solo el nombre del grupo
+        content = groups
+          .map(g => `<div class="group" data-group="${g.name}">${g.name}</div>`)
+          .join("");
       } 
       else if (status === "warning") {
         content = `<p class="light-text">No tiene grupos creados</p>`;
@@ -56,13 +59,32 @@ export class GroupList {
         content = `<p class="light-text">Ocurrió un error al obtener los grupos</p>`;
       }
 
+      // botón "Nuevo grupo"
+      const isOnCreateGroup = this.router.currentRoute === "/create-group";
+
       div.innerHTML = `
         <h3 class="sidebar-text">Grupos conectados</h3>
         <div class="group-list">
           ${content}
         </div>
         <p class="light-text">Selecciona un grupo para enviar un mensaje</p>
+        <div class="new-group-btn-container">
+          <button class="new-group-btn" ${isOnCreateGroup ? "disabled" : ""}>
+            Nuevo grupo
+          </button>
+        </div>
       `;
+
+      // aplicar estilos dinámicos al botón según ruta
+      const btn = div.querySelector(".new-group-btn");
+      if (isOnCreateGroup) {
+        btn.style.backgroundColor = "#b4b4b4";
+        btn.style.cursor = "not-allowed";
+      } else {
+        btn.addEventListener("click", () => {
+          this.router.navigateTo("/create-group");
+        });
+      }
 
       // Escucha de clicks en los usuarios
       div.querySelectorAll(".group").forEach(el => {
@@ -72,7 +94,7 @@ export class GroupList {
           // Activar el usuario actual
           el.classList.add("active");
 
-          const groupSelected = el.dataset.username;
+          const groupSelected = el.dataset.group;
           this.onGroupSelected(groupSelected);
         });
       });

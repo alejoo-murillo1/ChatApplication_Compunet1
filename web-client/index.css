@@ -240,5 +240,147 @@ html, body {
   background-color: #ffebe8; /* color al presionar */
 }
 
+.new-group-btn-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  margin-bottom: 15px;
+}
+
+.new-group-btn {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 18px;
+  color: white;
+  background-color: #689ea7;
+  border: none;
+  border-radius: 17px;
+  width: 200px;
+  height: 42px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.new-group-btn:hover:not(:disabled) {
+  background-color: #558b94;
+}
+
+.new-group-btn:disabled {
+  background-color: #b4b4b4;
+  cursor: not-allowed;
+}
+
+.page-layout {
+  display: flex;
+  height: 100%;
+}
+
+/* Contenedor del formulario */
+.create-group-form {
+  padding-top: 3px;
+  padding-left: 30px;
+  padding-right: 30px;
+  padding-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #737373;
+}
+
+.form-label {
+  font-size: 15px;
+  margin-bottom: 8px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #545454;
+}
+
+.font-text-input2 {
+  width: 400px;
+  height: 42px;
+  border: 2px solid #737373;
+  border-radius: 17px;
+  color: #737373;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 15px;
+  text-align: left;
+  padding-left: 10px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.font-text-input2:focus {
+  border-color: #689ea7;
+}
+
+/* Contenedor de los usuarios */
+.user-circle-container {
+  display: flex;
+  flex-direction: column;   /* 🔹 Coloca los elementos en columna */
+  align-items: flex-start;  /* Alinea a la izquierda */
+  gap: 10px;                /* Espacio vertical entre usuarios */
+  margin-top: 10px;
+}
+
+/* Cada usuario (círculo + nombre) en una línea */
+.user-item {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espacio entre círculo y nombre */
+}
+
+/* Círculo seleccionable */
+.user-circle {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background-color: transparent;
+  border: 2px solid #8dc8d2;
+  color: #8dc8d2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Cuando se selecciona */
+.user-circle.selected {
+  background-color: #8dc8d2;
+  color: white;
+}
+
+/* Nombre del usuario */
+.circle-name {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 15px;
+  color: #545454;
+}
+
+
+/* Botón de crear grupo */
+.create-group-btn {
+  width: 200px;
+  height: 42px;
+  background-color: #689ea7;
+  color: white;
+  font-size: 18px;
+  border: none;
+  border-radius: 17px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.create-group-btn:disabled {
+  background-color: #b4b4b4;
+  cursor: not-allowed;
+}
+
+.create-group-btn:hover:not(:disabled) {
+  background-color: #5a8f96;
+}
+
+
 
 

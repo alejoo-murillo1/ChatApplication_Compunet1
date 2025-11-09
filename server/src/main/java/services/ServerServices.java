@@ -16,7 +16,9 @@ public class ServerServices {
         this.groupDao = new GroupDao();
     }
 
-    synchronized public User registerUser(User newUser) {
+    synchronized public User registerUser(String name, boolean online) {
+        User newUser = new User(name, online);
+
         if(usersDao.findAllKeys().contains(newUser.getName())){
             usersDao.update(newUser);
             System.out.println("The user " + newUser.getName() + " is already registered. Online status updated: online = " + newUser.isOnline());
@@ -40,6 +42,9 @@ public class ServerServices {
 
     synchronized public List<Group> getUserGroups(String username) {
         List<Group> allGroups = groupDao.findAllValues();
+
+        System.out.println("Groups registered: " + allGroups.toString());
+
         List<Group> userGroups = new ArrayList<>();
 
         if (allGroups == null) {
@@ -56,5 +61,15 @@ public class ServerServices {
         }
 
         return userGroups;
+    }
+
+    synchronized public Group createGroup(String groupName, List<String> members) {
+        Group newGroup = new Group(groupName, members);
+
+        Group created = groupDao.save(newGroup);
+
+        System.out.println("The group " + created.getName() + " has been created with members: " + created.getMembers().toString());
+
+        return groupDao.finById(groupName);
     }
 }

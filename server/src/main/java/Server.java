@@ -9,6 +9,7 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 
 import dtos.Request;
 import dtos.Response;
@@ -80,9 +81,8 @@ public class Server {
                 try {
                     String name = rq.getData().get("name").getAsString();
                     boolean online = rq.getData().get("online").getAsBoolean();
-                    User user = new User(name, online);
 
-                    User newUser = services.registerUser(user);
+                    User newUser = services.registerUser(name, online);
                     System.out.println(newUser);
 
                     if(newUser != null){
@@ -121,9 +121,10 @@ public class Server {
                 try {
                     String username = rq.getData().get("username").getAsString();
                     List<Group> userGroups = services.getUserGroups(username);
-                    System.out.println(userGroups.toString());
+                    System.out.println("Groups of " + username + ": " +
+                            gson.toJsonTree(Map.of("userGroups", userGroups)).getAsJsonObject());
 
-                    if(userGroups.size() > 1){
+                    if(userGroups.size() >= 1){
                         resp.setstatus("ok");
                         resp.setData(
                             gson.toJsonTree(Map.of("userGroups", userGroups)).getAsJsonObject()
@@ -137,7 +138,30 @@ public class Server {
                     resp.setData(gson.toJsonTree(Map.of("message", "Get groups failed")).getAsJsonObject());
                     return resp;
                 }
-                break;    
+                break;
+            
+            case "create_group":
+                try {
+                    String groupName = rq.getData().get("name").getAsString();
+                    List<String> members = gson.fromJson(
+                        rq.getData().get("members"),
+                        new TypeToken<List<String>>() {}.getType()
+                    );
+                    
+                    Group newGroup = services.createGroup(groupName, members);
+                    System.out.println(newGroup.toString());
+
+                    if(newGroup != null){
+                        resp.setstatus("ok");
+                        resp.setData(gson.toJsonTree(newGroup).getAsJsonObject());
+                    }
+                } catch (Exception e) {
+                    resp.setstatus("error");
+                    resp.setData(gson.toJsonTree(Map.of("message", "Group registration failed")).getAsJsonObject());
+                    return resp;
+                }
+                break;
+
             default:
                 resp.setstatus("error");
                 resp.setData(gson.toJsonTree(Map.of("message", "Unknown action")).getAsJsonObject());

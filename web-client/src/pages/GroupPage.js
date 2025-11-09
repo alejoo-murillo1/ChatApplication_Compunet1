@@ -1,7 +1,6 @@
 import { Menu } from "../components/Menu.js";
 import { GroupList } from "../components/GroupList.js";
 import { Chat } from "../components/Chat.js";
-import { MessageInput } from "../components/MessageInput.js";
 
 export class GroupPage {
   constructor(router) {
@@ -26,11 +25,12 @@ export class GroupPage {
 
     // callback cuando se selecciona un grupo
     const onGroupSelected = (groupName) => {
+      console.log("groupName recibido:", groupName);
       this.selectedGroup = groupName;
       chatArea.innerHTML = `
         <div class="top-chat sidebar-text">Chat ${groupName}</div>
       `;
-      const chat = new Chat(this.groupName).render();
+      const chat = new Chat(groupName).render();
       chatArea.append(chat);
     };
 

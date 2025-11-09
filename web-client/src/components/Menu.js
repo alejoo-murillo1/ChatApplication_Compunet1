@@ -48,7 +48,7 @@ export class Menu {
 
     if (currentPath === "/chat") {
       chatsBtn.classList.add("active");
-    } else if (currentPath === "/groups") {
+    } else if (currentPath === "/groups" || currentPath === "/create-group") {
       groupsBtn.classList.add("active");
     }
 

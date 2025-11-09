@@ -1,27 +1,26 @@
 package model;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Group {
     private String name;
     private List<String> members;
 
-    public Group(String name) {
+    public Group(String name, List<String> members) {
         this.name = name;
-        members = new ArrayList<>();
+        this.members = members;
     }
 
     public String getName() {
         return name;
     }
 
-    public List<String> getMembers() {
-        return members;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public void addMember(String newMember) {
-        members.add(newMember);
+    public List<String> getMembers() {
+        return members;
     }
 
     public void setMembers(List<String> members) {
