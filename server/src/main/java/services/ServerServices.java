@@ -77,8 +77,24 @@ public class ServerServices {
         return newMessage;
     }
 
-    synchronized public List<Message> getChatMessages(String sender, String receiver) {
-        return messageDao.finById(new Pair<>(sender, receiver));
+    synchronized public List<Message> getChatMessages(String sender, String receiver, boolean isGroup) {
+        if (!isGroup) {
+            return messageDao.finById(new Pair<>(sender, receiver));
+        } else {
+            // Chat de grupo
+            Group group = groupDao.finById(receiver); // obtener info del grupo
+            if (group == null) return new ArrayList<>(); // grupo no existe
+
+            // verificar que el sender sea miembro
+            if (!group.getMembers().contains(sender)) return new ArrayList<>();
+
+            // obtener todos los mensajes cuyo receiver sea el grupo
+            return messageDao.findByGroup(receiver);
+        }
+    }
+
+    public boolean isGroup(String name) {
+        return groupDao.finById(name) != null;
     }
 
 }

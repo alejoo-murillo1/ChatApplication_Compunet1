@@ -85,4 +85,17 @@ public class MessageDao implements IDao<Pair<String, String>, List<Message>> {
         messages.put(key, existing);
         return existing;
     }
+
+    // Devuelve todos los mensajes cuyo receiver sea groupName
+    public List<Message> findByGroup(String groupName) {
+        List<Message> groupMessages = new ArrayList<>();
+        for (List<Message> msgs : messages.values()) {
+            for (Message m : msgs) {
+                if (m.getReceiver().equals(groupName)) {
+                    groupMessages.add(m);
+                }
+            }
+        }
+        return groupMessages;
+    }
 }

@@ -422,6 +422,8 @@ html, body {
   display: flex;
   flex-direction: column;
   margin-bottom: 10px;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 /* Nombre del remitente */

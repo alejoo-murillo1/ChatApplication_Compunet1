@@ -186,7 +186,9 @@ public class Server {
                     String sender = rq.getData().get("sender").getAsString();
                     String receiver = rq.getData().get("receiver").getAsString();
 
-                    List<Message> messages = services.getChatMessages(sender, receiver);
+                    boolean isGroup = services.isGroup(receiver);
+
+                    List<Message> messages = services.getChatMessages(sender, receiver, isGroup);
 
                     System.out.println("Messages of " + sender + " and " + receiver + ": " +
                             gson.toJsonTree(Map.of("messages", messages)).getAsJsonObject());
