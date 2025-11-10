@@ -183,6 +183,12 @@ public class Server {
             
             case "get_messages":
                 try {
+                    System.out.println("All messages keys: " +
+                            gson.toJsonTree(Map.of("keys", services.getAllMsgKeys())).getAsJsonObject());
+
+                    System.out.println("All messages: " +
+                            gson.toJsonTree(Map.of("messages", services.getAllMsgValues())).getAsJsonObject());
+
                     String sender = rq.getData().get("sender").getAsString();
                     String receiver = rq.getData().get("receiver").getAsString();
 
