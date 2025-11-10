@@ -1,2 +1,2 @@
-rootProject.name = 'ChatApplication'
-
+rootProject.name = 'ChatApplication_Compunet1'
+include 'server'
