@@ -1,6 +1,5 @@
 package services;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,9 +83,9 @@ public class ServerServices {
         Message newMessage = new Message(sender, receiver, msg);
 
         if(!isGroup(receiver)) {
-            messageDao.saveSingle(newMessage, false);
+            messageDao.saveUserMessage(newMessage);
         } else {
-            messageDao.saveSingle(newMessage, true);
+            messageDao.saveGroupMessage(newMessage);
         }
         
         return newMessage;
@@ -96,22 +95,21 @@ public class ServerServices {
         if (!isGroup) {
             return messageDao.finById(new Pair<>(sender, receiver));
         } else {
-            // Chat de grupo
-            Group group = groupDao.finById(receiver); // obtener info del grupo
-            if (group == null) return new ArrayList<>(); // grupo no existe
-
-            // verificar que el sender sea miembro
-            if (!group.getMembers().contains(sender)) return new ArrayList<>();
-
-            // obtener todos los mensajes cuyo receiver sea el grupo
+            //Obtener todos los mensajes en los que el receiver sea un grupo
             return messageDao.findByGroup(receiver);
         }
     }
 
-
-
     public boolean isGroup(String name) {
         return groupDao.finById(name) != null;
+    }
+
+    public List<List<Message>> getAllMsgValues() {
+        return messageDao.findAllValues();
+    }
+
+    public List<Pair<String, String>> getAllMsgKeys() {
+        return messageDao.findAllKeys();
     }
 
 }
