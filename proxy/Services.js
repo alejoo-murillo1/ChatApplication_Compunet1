@@ -8,13 +8,16 @@ app.use(express.json());
 
 const port = 3001;
 
+const serverPort = 5000;
+const serverIp = "localhost";
+
 app.post("/users", (req, res) => {
   const userData = req.body;
 
   // crear un nuevo socket para cada petición
   const socket = new net.Socket();
 
-  socket.connect(5000, "localhost", () => {
+  socket.connect(serverPort, serverIp, () => {
     const message = JSON.stringify({
       action: "register_user",
       data: userData,
@@ -50,7 +53,7 @@ app.post("/users", (req, res) => {
 app.get("/users", (req, res) => {
   const socket = new net.Socket();
 
-  socket.connect(5000, "localhost", () => {
+  socket.connect(serverPort, serverIp, () => {
     const message = JSON.stringify({
       action: "get_online_users",
     });
@@ -88,7 +91,7 @@ app.get("/groups", (req, res) => {
 
   const socket = new net.Socket();
 
-  socket.connect(5000, "localhost", () => {
+  socket.connect(serverPort, serverIp, () => {
     const message = JSON.stringify({
       action: "get_user_groups",
       data: userData
@@ -126,7 +129,7 @@ app.post("/create-group", (req, res) => {
 
   const socket = new net.Socket();
 
-  socket.connect(5000, "localhost", () => {
+  socket.connect(serverPort, serverIp, () => {
     const message = JSON.stringify({
       action: "create_group",   
       data: groupData,        
@@ -168,7 +171,7 @@ app.post("/add_message", (req, res) => {
 
   const socket = new net.Socket();
 
-  socket.connect(5000, "localhost", () => {
+  socket.connect(serverPort, serverIp, () => {
     const message = JSON.stringify({
       action: "add_message",   
       data: messageData,        
@@ -212,7 +215,7 @@ app.get("/get_messages", (req, res) => {
 
   const socket = new net.Socket();
 
-  socket.connect(5000, "localhost", () => {
+  socket.connect(serverPort, serverIp, () => {
     const message = JSON.stringify({
       action: "get_messages",
       data: data
@@ -251,7 +254,7 @@ app.put("/users/status", (req, res) => {
   // crear un nuevo socket para cada petición
   const socket = new net.Socket();
 
-  socket.connect(5000, "localhost", () => {
+  socket.connect(serverPort, serverIp, () => {
     const message = JSON.stringify({
       action: "logout_user",
       data: userData,

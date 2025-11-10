@@ -26,6 +26,20 @@
   - [Chat Page](#chat-page)
   - [Group Page](#group-page)
   - [Create Group Page](#create-group-page)
+  - [Salir](#salir-de-la-página)
+- [Estructura del proyecto](#estructura-del-proyecto)
+  - [DTOS](#dtos)
+  - [DAOS](#daos)
+  - [Persistencia](#persistencia)
+  - [Modelo](#modelo)
+- [Flujo de comunicación](#flujo-de-comunicación)
+  - [Registrar un usuario](#registrar-un-usuario)
+  - [Crear un grupo](#crear-un-grupo)
+  - [Enviar un mensaje](#enviar-un-mensaje)
+  - [Obtener usuarios en línea](#obtener-usuarios-en-línea)
+  - [Obtener grupos en los que el usuario es miembro](#obtener-grupos-en-los-que-el-usuario-es-miembro)
+  - [Obtener los mensajes de un chat o un grupo](#obtener-los-mensajes-de-un-chat-o-un-grupo)
+  - [Salir de la página](#salir-de-la-página)
 
 
 ## Descripción:
@@ -37,7 +51,7 @@
 - Envío de mensajes de texto a Usuarios o a Grupos.
 - Almacenamiento/Persistencia del historial de mensajes de los chats.
 
-> Estas funciones están mapeadas en la aplicación por medio de diferentes páginas, las cuales se especifican más adelante en **Guía para ubicarse dentro de la página**.
+> Estas funciones están mapeadas en la aplicación por medio de diferentes páginas, las cuales se especifican más adelante en [Guía para ubicarse dentro de la página](#guía-para-ubicarse-dentro-de-la-página).
 
 ## Configuración de Puertos
 
@@ -174,3 +188,515 @@ Verás un pequeño formulario, en el que debes ingresar el nombre del grupo y se
 
 Luego de que la información esté lista, debes presionar el botón `Crear grupo` al final del formulario.
 Luego se te dirigirá automáticamente a la página de Grupos para que puedas enviarle un mensaje a alguno.
+
+## Salir de la página
+
+Si quieres salir del chat, basta con presionar la opción del menú `Salir`. Con eso quedarás offline y no recibirás ni podrás envíar más mensajes.
+
+# Estructura del proyecto
+
+Es un multiproyecto, que incluye:
+
+- ***web-client***: Cliente web implementado con HTML, CSS y JavaScript. Envía peticiones HTTP al proxy. Recibe la respuesta del **proxy** y renderiza en la página web.
+
+- ***proxy***: Servidor HTTP que sirve como puente entre el **web-client** y el **server**. Recibe las peticiones del cliente
+y las envía al **server** mediante *Sockets* usando `TCP`. Recibe las respuestas del **server** y le responde al **web-client**.
+
+- ***server***: Servidor en Java, recibe los mensajes envíados por el **proxy** mediante los *Sockets*, interpreta la solicitud y la procesa según la acción indicada desde el proxy. Responde al **proxy** indicando si la solicitud se resolvió exitosamente o no.
+
+## DTOS
+
+Ruta: `server/src/main/java/dtos`
+
+Para que el servidor entienda las peticiones y envíe una respuesta, se definieron las clases `Request.java` y `Response.java` para darle formato a los JSON que recibe y envía el server mediante los sockets.
+
+```Java
+public class Request {
+  private String action;
+  private JsonObject data;
+  //Constructor, getters y setters
+}
+```
+
+```Java
+public class Response {
+  private String status;
+  private JsonObject data;
+  //Constructor, getters y setters
+}
+```
+El servidor obtiene el mensaje enviado desde el proxy y lo convierte a la clase `Request.java`. Maneja las peticiones con un `switch` dependiendo del `request.getAction()`. 
+
+Para cada `action`, hace unas operaciones específicas, con ayuda de la clase `ServerServices.java` que usa los `DAOS` que manejan los datos del sistema.
+
+## DAOS
+
+Ruta: `server/src/main/java/daos`
+
+Para almacenar los datos de la aplicación, se definió la interface `IDao.java`:
+
+```Java
+public interface IDao<K,V> {
+    public List<K> findAllKeys();
+    public List<V> findAllValues();
+    public V finById(K id);
+    public V update(V newEntity);
+    public boolean delete(V entity);
+    public V save(V entity);
+}
+```
+Las clases `UserDao.java`, `GroupDao.java` y `MessageDao.java` implementan la interface y manejan los datos en memoria, con ayuda de `Map` para hacer consultas en $O(1)$
+
+## Persistencia
+
+Ruta: `server/src/main/java/persistence`
+
+Ruta archivos: `server/data`
+
+La persistencia se maneja con archivos JSON. 
+Los **DAOS** se encargan de leer y escribir los archivos JSON con ayuda de la clase `JsonFileUtils.java` para mantener los datos que se almacenen al ejecutarse el proyecto.
+
+## Modelo 
+
+Ruta: `server/src/main/java/model`
+
+Se definen las entidades:
+
+```Java
+public class User {
+  private String name;
+  private boolean online;
+  //Constructor, getters y setters
+}
+```
+
+```Java
+public class Group {
+  private String name;
+  private List<String> members;
+  //Constructor, getters y setters
+}
+```
+
+```Java
+public class Message {
+  private String sender;
+  private String receiver;
+  private String message;
+  //Constructor, getters y setters
+}
+```
+
+```Java
+public class Pair {
+  //Clase útil para las claves (sender, receiver) del MessageDao
+
+  private final A first;
+  private final B second;
+  //Constructor, getters y setters
+}
+```
+<br>
+
+# Flujo de comunicación 
+
+## Registrar un usuario
+
+### Web-client
+
+Desde la `HomePage.js`, se obtiene el input de la barra de texto cuando el usuario presiona el botón `Ingresar`, y se llama al endpoint del proxy
+
+```JavaScript
+const userData = {
+        name: name,
+        online: true,
+      };
+
+const response = await axios.post("http://localhost:3001/users", userData);
+```
+
+### Proxy
+
+El proxy expone el endpoint:
+
+```JavaScript
+app.post("/users", (req, res) => {
+  const userData = req.body;
+  //implementación del endpoint
+})
+```
+En el que se conecta con el servidor y le envía:
+
+```JavaScript
+const message = JSON.stringify({
+      action: "register_user",
+      data: userData,
+    });
+```
+
+###  Server
+
+Recibe la solicitud del **proxy** y obtiene el `action` de la solicitud, luego llama al método de `ServeraServices.java` apropiado.
+
+En caso de que el usuario ya esté almacenado en el **DAO**, se acualiza su estado a `online = true`. 
+
+Si no, se guarda la infomación del nuevo usuario. 
+
+En caso de que todo salga bien, el server envía la respuesta:
+
+```JSON
+{
+  "status": "ok",
+  "data": //información del nuevo usuario
+}
+```
+Si ocurrió un error:
+
+```JSON
+{
+  "status": "error",
+  "data": "User registration failed"
+}
+```
+
+## Crear un grupo
+
+### Web-client
+
+Desde la `CreateGroupPage.js`, se obtiene el input de la barra de texto con el nombre del grupo y los usuarios seleccionados cuando el usuario presiona el botón `Crear grupo`, y se llama al endpoint del proxy
+
+```JavaScript
+const payload = { name: groupName, members };
+const response = await axios.post("http://localhost:3001/create-group", payload);
+```
+
+### Proxy
+
+El proxy expone el endpoint:
+
+```JavaScript
+app.post("/create-group", (req, res) => {
+  const groupData = req.body;
+  //implementación del endpoint
+})
+```
+En el que se conecta con el servidor y le envía:
+
+```JavaScript
+const message = JSON.stringify({
+  action: "create_group",   
+  data: groupData,        
+});
+```
+
+###  Server
+
+Recibe la solicitud del **proxy** y obtiene el `action` de la solicitud, luego llama al método de `ServeraServices.java` apropiado.
+
+En caso de que todo salga bien, el server envía la respuesta:
+
+```JSON
+{
+  "status": "ok",
+  "data": //información del nuevo grupo
+}
+```
+Si ocurrió un error:
+
+```JSON
+{
+  "status": "error",
+  "data": "Group registration failed"
+}
+```
+
+## Enviar un mensaje
+
+### Web-client
+
+Desde el componente `MessageInput.js`, se obtiene el input de la barra de texto con el contenido del mensaje cuando el usuario presiona el botón `Enviar`, y se llama al endpoint del proxy
+
+```JavaScript
+const messageData = {
+  sender,
+  receiver,
+  message: text,
+}
+
+const response = await axios.post("http://localhost:3001/add_message", messageData);
+```
+> Nota: el `receiver` puede ser el nombre de un usuario o el nombre de un grupo
+
+### Proxy
+
+El proxy expone el endpoint:
+
+```JavaScript
+app.post("/add_message", (req, res) => {
+  const messageData = req.body;
+  //implementación del endpoint
+})
+```
+En el que se conecta con el servidor y le envía:
+
+```JavaScript
+const message = JSON.stringify({
+      action: "add_message",   
+      data: messageData,        
+});
+```
+
+###  Server
+
+Recibe la solicitud del **proxy** y obtiene el `action` de la solicitud, luego llama al método de `ServeraServices.java` apropiado.
+
+En caso de que todo salga bien, el server envía la respuesta:
+
+```JSON
+{
+  "status": "ok",
+  "data": //información del nuevo mensaje
+}
+```
+Si ocurrió un error:
+
+```JSON
+{
+  "status": "error",
+  "data": "Message registration failed"
+}
+```
+
+## Obtener usuarios en línea
+
+### Web-client
+
+Desde el componente `ChatList.js`, se llama al endpoint del proxy
+
+```JavaScript
+const response = await axios.get("http://localhost:3001/users", {
+        params: {username}
+      });
+```
+
+### Proxy
+
+El proxy expone el endpoint:
+
+```JavaScript
+app.get("/users", (req, res) => {
+  //implementación del endpoint
+})
+```
+En el que se conecta con el servidor y le envía:
+
+```JavaScript
+const message = JSON.stringify({
+      action: "get_online_users",
+    });
+```
+
+###  Server
+
+Recibe la solicitud del **proxy** y obtiene el `action` de la solicitud, luego llama al método de `ServeraServices.java` apropiado.
+
+En caso de que todo salga bien y haya más de un usuario registrado, el server envía la respuesta:
+
+```JSON
+{
+  "status": "ok",
+  "data": //lista con todos los usuarios que tengan online=true
+}
+```
+Si solo hay un usuario registrado:
+
+```JSON
+{
+  "status": "warning",
+  "data": "Only one user registered"
+}
+```
+Si ocurrió un error:
+
+```JSON
+{
+  "status": "error",
+  "data": "Get users online failed"
+}
+```
+
+## Obtener grupos en los que el usuario es miembro
+
+### Web-client
+
+Desde el componente `GroupList.js`, se llama al endpoint del proxy
+
+```JavaScript
+const response = await axios.get("http://localhost:3001/groups", {
+        params: {username}
+      });
+```
+
+### Proxy
+
+El proxy expone el endpoint:
+
+```JavaScript
+app.get("/groups", (req, res) => {
+  //implementación del endpoint
+})
+```
+En el que se conecta con el servidor y le envía:
+
+```JavaScript
+const message = JSON.stringify({
+      action: "get_user_groups",
+    });
+```
+
+###  Server
+
+Recibe la solicitud del **proxy** y obtiene el `action` de la solicitud, luego llama al método de `ServeraServices.java` apropiado.
+
+En caso de que todo salga bien y el usuario sea miembro de algún grupo, el server envía la respuesta:
+
+```JSON
+{
+  "status": "ok",
+  "data": //lista con todos los grupos a los que pertenece el usuario
+}
+```
+Si no es miembro de ningún grupo:
+
+```JSON
+{
+  "status": "warning",
+  "data": "username is not a member of any group"
+}
+```
+Si ocurrió un error:
+
+```JSON
+{
+  "status": "error",
+  "data": "Get groups failed" 
+}
+```
+
+## Obtener los mensajes de un chat o un grupo
+
+### Web-client
+
+Desde el componente `Chat.js`, se llama al endpoint del proxy
+
+```JavaScript
+const response = await axios.get("http://localhost:3001/get_messages", {
+          params: { sender, receiver: this.receiver },
+        });
+```
+> Nota: el `receiver` puede ser el nombre de un usuario o el nombre de un grupo
+
+### Proxy
+
+El proxy expone el endpoint:
+
+```JavaScript
+app.get("/get_messages", (req, res) => {
+  const sender = req.query.sender;
+  const receiver = req.query.receiver;
+  const data = { sender, receiver };
+  //implementación del endpoint
+})
+```
+En el que se conecta con el servidor y le envía:
+
+```JavaScript
+const message = JSON.stringify({
+      action: "get_messages",
+      data: data
+    });
+```
+
+###  Server
+
+Recibe la solicitud del **proxy** y obtiene el `action` de la solicitud, luego llama al método de `ServeraServices.java` apropiado.
+
+En caso de que todo salga bien y el chat tenga mensajes guardados, el server envía la respuesta:
+
+```JSON
+{
+  "status": "ok",
+  "data": //lista con todos los mensajes del chat
+}
+```
+Si no el chat no tiene mensajes:
+
+```JSON
+{
+  "status": "warning",
+  "data": "sender and receiver haven't messages yet"
+}
+```
+Si ocurrió un error:
+
+```JSON
+{
+  "status": "error",
+  "data": "Get messages failed"
+}
+```
+
+## Salir de la página
+
+### Web-client
+
+Desde el componente `Menu.js`, al presionar la opción `Salir` se llama al endpoint del proxy
+
+```JavaScript
+const userData = {
+        name: username,
+        online: false
+      };
+
+const response = await axios.put("http://localhost:3001/users/status", userData);
+```
+
+### Proxy
+
+El proxy expone el endpoint:
+
+```JavaScript
+app.put("/users/status", (req, res) => {
+  const userData = req.body;
+  //implementación del endpoint
+})
+```
+En el que se conecta con el servidor y le envía:
+
+```JavaScript
+const message = JSON.stringify({
+      action: "logout_user",
+      data: userData,
+    });
+```
+
+###  Server
+
+Recibe la solicitud del **proxy** y obtiene el `action` de la solicitud, luego llama al método de `ServeraServices.java` apropiado.
+
+En caso de que todo salga bien, el server envía la respuesta:
+
+```JSON
+{
+  "status": "ok",
+  "data": //información del usuario actualizada
+}
+```
+Si ocurrió un error:
+
+```JSON
+{
+  "status": "error",
+  "data": "User update failed"
+}
+```
