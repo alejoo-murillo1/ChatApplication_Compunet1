@@ -30,7 +30,7 @@ export class GroupPage {
       chatArea.innerHTML = `
         <div class="top-chat sidebar-text">Chat ${groupName}</div>
       `;
-      const chat = new Chat(groupName).render();
+      const chat = new Chat(groupName, true).render();
       chatArea.append(chat);
     };
 

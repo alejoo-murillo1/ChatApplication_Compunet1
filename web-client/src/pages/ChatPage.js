@@ -30,7 +30,8 @@ export class ChatPage {
       chatArea.innerHTML = `
         <div class="top-chat sidebar-text">Chat con ${username}</div>
       `;
-      const chat = new Chat(this.selectedUser).render();
+      
+      const chat = new Chat(this.selectedUser, false).render();
       chatArea.append(chat);
     };
 
@@ -43,4 +44,5 @@ export class ChatPage {
 
     return box;
   }
+
 }

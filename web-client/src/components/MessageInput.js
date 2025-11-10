@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export class MessageInput {
   constructor(chat) {
     this.chat = chat;
@@ -15,20 +17,34 @@ export class MessageInput {
     const button = div.querySelector("#send");
 
     input.addEventListener("input", () => {
-      if (input.value.trim() !== "") {
-        button.classList.add("active");
-        button.disabled = false;
-      } else {
-        button.classList.remove("active");
-        button.disabled = true;
-      }
+      const text = input.value.trim();
+      button.disabled = text === "";
+      button.classList.toggle("active", text !== "");
     });
 
-    button.addEventListener("click", async () => {;
+    button.addEventListener("click", async () => {
       const text = input.value.trim();
-      if (text) {
-        this.chat.addMessage(text, "me", "you");
+      if (!text) return;
+
+      const sender = sessionStorage.getItem("username");
+      const receiver = this.chat.receiver;
+
+      try {
+        const response = await axios.post("http://localhost:3001/add_message", {
+          sender,
+          receiver,
+          message: text,
+        });
+        console.log("Respuesta del proxy:", response.data);
+
         input.value = "";
+        button.disabled = true;
+        button.classList.remove("active");
+
+        this.chat.loadMessages();
+
+      } catch (error) {
+        console.error("Error al enviar mensaje:", error);
       }
     });
 

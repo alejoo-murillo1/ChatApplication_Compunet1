@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
 import dtos.Request;
@@ -158,6 +157,53 @@ public class Server {
                 } catch (Exception e) {
                     resp.setstatus("error");
                     resp.setData(gson.toJsonTree(Map.of("message", "Group registration failed")).getAsJsonObject());
+                    return resp;
+                }
+                break;
+            
+            case "add_message":
+                try {
+                    String sender = rq.getData().get("sender").getAsString();
+                    String receiver = rq.getData().get("receiver").getAsString();
+                    String message = rq.getData().get("message").getAsString();
+
+                    Message newMsg = services.addMessage(sender, receiver, message);
+                    System.out.println(newMsg);
+
+                    if(newMsg != null){
+                        resp.setstatus("ok");
+                        resp.setData(gson.toJsonTree(newMsg).getAsJsonObject());
+                    }
+                } catch (Exception e) {
+                    resp.setstatus("error");
+                    resp.setData(gson.toJsonTree(Map.of("message", "Message registration failed")).getAsJsonObject());
+                    return resp;
+                }
+                break;
+            
+            case "get_messages":
+                try {
+                    String sender = rq.getData().get("sender").getAsString();
+                    String receiver = rq.getData().get("receiver").getAsString();
+
+                    List<Message> messages = services.getChatMessages(sender, receiver);
+
+                    System.out.println("Messages of " + sender + " and " + receiver + ": " +
+                            gson.toJsonTree(Map.of("messages", messages)).getAsJsonObject());
+
+                    if(messages.size() >= 1){
+                        resp.setstatus("ok");
+                        resp.setData(
+                            gson.toJsonTree(Map.of("messages", messages)).getAsJsonObject()
+                        );
+                    } else {
+                        resp.setstatus("warning");
+                        resp.setData(gson.toJsonTree(Map.of("message", sender + " and " + receiver +
+                         " haven't messages yet")).getAsJsonObject());
+                    }
+                } catch (Exception e) {
+                    resp.setstatus("error");
+                    resp.setData(gson.toJsonTree(Map.of("message", "Get messages failed")).getAsJsonObject());
                     return resp;
                 }
                 break;

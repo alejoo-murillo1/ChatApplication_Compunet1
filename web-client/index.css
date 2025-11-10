@@ -381,6 +381,82 @@ html, body {
   background-color: #5a8f96;
 }
 
+.chat-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.msg-container {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Mensajes base */
+.chat-message {
+  max-width: 60%;
+  padding: 8px 12px;
+  border-radius: 15px;
+  word-wrap: break-word;
+  font-family: "Segoe UI", sans-serif;
+  font-size: 14px;
+}
+
+/* Mensajes enviados por el usuario actual */
+.chat-message.sent {
+  align-self: flex-end;
+  background-color: #f9e7da;
+}
+
+/* Mensajes recibidos */
+.chat-message.received {
+  align-self: flex-start;
+  background-color: #cce5e9;
+}
+
+.chat-message-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+/* Nombre del remitente */
+.chat-sender {
+  font-family: "Segoe UI", sans-serif;
+  font-size: 12px;
+  color: #737373;
+  margin-bottom: 3px;
+  margin-left: 6px;
+}
+
+/* Burbuja base */
+.chat-message {
+  max-width: 60%;
+  padding: 8px 12px;
+  border-radius: 15px;
+  word-wrap: break-word;
+  font-family: "Segoe UI", sans-serif;
+  font-size: 14px;
+}
+
+/* Mensaje propio */
+.chat-message.sent {
+  align-self: flex-end;
+  background-color: #f9e7da;
+}
+
+/* Mensaje recibido */
+.chat-message.received {
+  align-self: flex-start;
+  background-color: #cce5e9;
+}
+
+
+
 
 
 

@@ -10,10 +10,12 @@ public class ServerServices {
 
     private IDao<String, User> usersDao;
     private IDao<String, Group>  groupDao;
+    private MessageDao messageDao;
     
     public ServerServices() {
         this.usersDao = new UserDao();
         this.groupDao = new GroupDao();
+        this.messageDao = new MessageDao();
     }
 
     synchronized public User registerUser(String name, boolean online) {
@@ -47,10 +49,6 @@ public class ServerServices {
 
         List<Group> userGroups = new ArrayList<>();
 
-        if (allGroups == null) {
-            return userGroups;
-        }
-
         for (Group group : allGroups) {
             for (String member : group.getMembers()) {
                 if (member.equals(username)) {
@@ -72,4 +70,15 @@ public class ServerServices {
 
         return groupDao.finById(groupName);
     }
+
+    synchronized public Message addMessage(String sender, String receiver, String msg) {
+        Message newMessage = new Message(sender, receiver, msg);
+        messageDao.saveSingle(newMessage);
+        return newMessage;
+    }
+
+    synchronized public List<Message> getChatMessages(String sender, String receiver) {
+        return messageDao.finById(new Pair<>(sender, receiver));
+    }
+
 }
