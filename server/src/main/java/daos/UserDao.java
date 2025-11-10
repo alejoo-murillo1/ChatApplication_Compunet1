@@ -5,14 +5,55 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.reflect.TypeToken;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Type;
+
 import model.User;
+import persistence.JsonFileUtils;
 
 public class UserDao implements IDao<String, User> {
 
     private Map<String, User> users;
 
-    public UserDao(){
+    private final String filePath = "data/users.json";
+
+    public UserDao() {
+        ensureFileExists();
+        loadFromFile();
+    }
+
+    private void ensureFileExists() {
+        File dataFolder = new File("data");
+        if (!dataFolder.exists()) dataFolder.mkdirs();
+
+        File file = new File(filePath);
+        try {
+            if (!file.exists()) file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadFromFile() {
+        Type listType = new TypeToken<List<User>>() {}.getType();
+        List<User> list = JsonFileUtils.readListFromFile(filePath, listType);
         users = new HashMap<>();
+        if (list != null) {
+            for (User u : list) {
+                users.put(u.getName(), u);
+            }
+        }
+    }
+
+    private void saveToFile() {
+        try {
+            JsonFileUtils.writeListToFile(filePath, users.values().stream().toList());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -67,6 +108,7 @@ public class UserDao implements IDao<String, User> {
     public User save(User entity) {
         String name = entity.getName();
         users.put(name, entity);
+        saveToFile();
         return users.get(name);
     }
 }

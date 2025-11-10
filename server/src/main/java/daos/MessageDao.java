@@ -5,15 +5,60 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.reflect.TypeToken;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Type;
+
 import model.Message;
 import model.Pair;
+import persistence.JsonFileUtils;
 
 public class MessageDao implements IDao<Pair<String, String>, List<Message>> {
 
     private Map<Pair<String, String>, List<Message>> messages;
 
+    private final String filePath = "data/messages.json";
+
     public MessageDao() {
-        this.messages = new HashMap<>();
+        ensureFileExists();
+        loadFromFile();
+    }
+
+    private void ensureFileExists() {
+        File dataFolder = new File("data");
+        if (!dataFolder.exists()) dataFolder.mkdirs();
+
+        File file = new File(filePath);
+        try {
+            if (!file.exists()) file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadFromFile() {
+        Type listType = new TypeToken<List<Message>>() {}.getType();
+        List<Message> list = JsonFileUtils.readListFromFile(filePath, listType);
+        messages = new HashMap<>();
+        if (list != null) {
+            for (Message m : list) {
+                Pair<String,String> key = normalizeKey(m.getSender(), m.getReceiver());
+                messages.computeIfAbsent(key, k -> new ArrayList<>()).add(m);
+            }
+        }
+    }
+
+    private void saveToFile() {
+        List<Message> allMessages = messages.values().stream()
+                                            .flatMap(List::stream)
+                                            .toList();
+        try {
+            JsonFileUtils.writeListToFile(filePath, allMessages);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -83,6 +128,7 @@ public class MessageDao implements IDao<Pair<String, String>, List<Message>> {
         List<Message> existing = messages.getOrDefault(key, new ArrayList<>());
         existing.add(message);
         messages.put(key, existing);
+        saveToFile();
         return existing;
     }
 

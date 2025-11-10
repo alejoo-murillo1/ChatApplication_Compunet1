@@ -389,7 +389,7 @@ html, body {
 
 .msg-container {
   flex: 1;
-  padding: 10px;
+  padding: 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -422,8 +422,8 @@ html, body {
   display: flex;
   flex-direction: column;
   margin-bottom: 10px;
-  padding-left: 20px;
-  padding-right: 20px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 /* Nombre del remitente */

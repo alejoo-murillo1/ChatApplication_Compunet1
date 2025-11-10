@@ -5,14 +5,55 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.reflect.TypeToken;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Type;
+
 import model.Group;
+import persistence.JsonFileUtils;
 
 public class GroupDao implements IDao<String,Group> {
 
     private Map<String, Group> groups;
 
-    public GroupDao(){
+    private final String filePath = "data/groups.json";
+
+    public GroupDao() {
+        ensureFileExists();
+        loadFromFile();
+    }
+
+    private void ensureFileExists() {
+        File dataFolder = new File("data");
+        if (!dataFolder.exists()) dataFolder.mkdirs();
+
+        File file = new File(filePath);
+        try {
+            if (!file.exists()) file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadFromFile() {
+        Type listType = new TypeToken<List<Group>>() {}.getType();
+        List<Group> list = JsonFileUtils.readListFromFile(filePath, listType);
         groups = new HashMap<>();
+        if (list != null) {
+            for (Group g : list) {
+                groups.put(g.getName(), g);
+            }
+        }
+    }
+
+    private void saveToFile() {
+        try {
+            JsonFileUtils.writeListToFile(filePath, groups.values().stream().toList());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -61,6 +102,7 @@ public class GroupDao implements IDao<String,Group> {
     public Group save(Group entity) {
         String name = entity.getName();
         groups.put(name, entity);
+        saveToFile();
         return groups.get(name);
     }
     
