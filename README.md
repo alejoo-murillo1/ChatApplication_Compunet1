@@ -74,7 +74,7 @@ Antes de ejecutar el proyecto, asegúrate de tener instalado lo siguiente:
 
 Desde la raíz del proyecto, instala las dependencias necesarias:
 
-```bash
+```
 npm i --save-dev webpack webpack-cli
 npm i --save-dev webpack-dev-server
 npm i --serve-dev html-webpack-plugin
@@ -136,31 +136,41 @@ Para abrir la página web, deberás ir al enlace que sale tras ejecutar el coman
 
 # Guía para ubicarse dentro de la página
 
-#### Home Page
+## Home Page
 
-La página principal del chat te recibe con una bienvenida y una pequeña descripción. En ella, verás un campo para ingresar el nombre de usuario con el que deseas entrar al chat. Luego de escribirlo, basta con presionar el botón de `Ingresar` para poder acceder a las funcionalidades del chat.
+La página principal del chat te recibe con una bienvenida y una pequeña descripción. 
+En ella, verás un campo para ingresar el nombre de usuario con el que deseas entrar al chat. 
+Luego de escribirlo, basta con presionar el botón de `Ingresar` para poder acceder a las funcionalidades del chat.
 
-#### Chat Page
+## Chat Page
 
 Tan pronto ingreses, verás esta página. Puedes darte cuenta que estás en ella porque en el menú superior está resaltada la opción `Chat`.
+
 Bajo el menú, a la izquierda, verás la lista de usuarios que están conectados, con los que podrás mensajear al presionar su nombre. 
+
 > *Nota: Si no ves ninguno, es porque eres el único usuario conectado.*
 
 En caso de haber hablado con ese usuario antes, podrás ver el historial de mensajes con ese usuario.
+
 Para enviar un mensaje debes escribir el texto que deseas en la barra de texto al inferior de la pantalla y luego presionar el botón `Enviar`. 
 
-#### Group Page
+## Group Page
 
 Para ir a esta página, debes presionar la opción `Grupos` del menú. Puedes darte cuenta que estás en ella porque en el menú superior está resaltada la opción `Grupos`.
+
 Bajo el menú, a la izquierda, verás la lista de grupos a los que perteneces, con los que podrás enviarles mensajes a todos los miembros al presionar el nombre del grupo. 
-> *Si no ves ninguno, es porque no eres miembro de ningún grupo aún. **Te animamos a crear uno.***
+
+> *Nota: Si no ves ninguno, es porque no eres miembro de ningún grupo aún. **Te animamos a crear uno.***
 
 En caso de haber hablado con ese grupo antes, podrás ver el historial de mensajes del grupo. Arriba de cada mensaje, podrás ver el emisor del mismo.
+
 Para enviar un mensaje debes escribir el texto que deseas en la barra de texto al inferior de la pantalla y luego presionar el botón `Enviar`.
 
-#### Create Group Page
+## Create Group Page
 
 Para ir a esta página, debes presionar la opción `Nuevo grupo` que se encuentra en la parte inferior de la barra lateral de la página `Grupos`. Puedes darte cuenta que estás en ella porque en pantalla se ve **Crear un nuevo grupo**.
+
 Verás un pequeño formulario, en el que debes ingresar el nombre del grupo y seleccionar, de los usuarios conectados, a quiénes quieres  incluir en el grupo. Para crear un grupo, **necesitas mínimo 3 usuarios (incluyéndote)**.
+
 Luego de que la información esté lista, debes presionar el botón `Crear grupo` al final del formulario.
 Luego se te dirigirá automáticamente a la página de Grupos para que puedas enviarle un mensaje a alguno.
