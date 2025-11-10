@@ -6,7 +6,29 @@
 
 - Isabella Candado
 - Alejandro Murillo
-### Descripción:
+
+## Tabla de Contenidos
+
+
+  - [Descripción](#descripción)
+  - [Configuración de Puertos](#configuración-de-puertos)
+- [Guía para ejecutar el proyecto](#guía-para-ejecutar-el-proyecto)
+  - [Requisitos](#requisitos)
+  - [Paquetes de debes instalar](#paquetes-de-debes-instalar)
+    - [Cliente web (Node.js)](#cliente-web-nodejs)
+    - [Proxy (Node.js)](#proxy-nodejs)
+  - [Comandos para ejecutar](#comandos-para-ejecutar)
+    - [Server](#server)
+    - [Proxy](#proxy)
+    - [Web-client](#web-client)
+- [Guía para ubicarse dentro de la página](#guía-para-ubicarse-dentro-de-la-página)
+  - [Home Page](#home-page)
+  - [Chat Page](#chat-page)
+  - [Group Page](#group-page)
+  - [Create Group Page](#create-group-page)
+
+
+## Descripción:
 
 **ChatApplication** es una aplicación de mensajería web. Incorpora funcionalidades como:
 
@@ -17,8 +39,7 @@
 
 > Estas funciones están mapeadas en la aplicación por medio de diferentes páginas, las cuales se especifican más adelante en **Guía para ubicarse dentro de la página**.
 
----
-### Configuración de Puertos
+## Configuración de Puertos
 
 Cada componente del proyecto se ejecuta en un puerto distinto en **localhost**:
 
@@ -35,10 +56,11 @@ Cada componente del proyecto se ejecuta en un puerto distinto en **localhost**:
 >   - En el proxy, editando el archivo `proxy/Services.js`.
 >   - En el servidor, ajustando el puerto configurado en la clase `Server.java`.
 
----
-### Guía para ejecutar el proyecto
+<br>
 
-#### Requisitos
+# Guía para ejecutar el proyecto
+
+## Requisitos
 
 Antes de ejecutar el proyecto, asegúrate de tener instalado lo siguiente:
 
@@ -46,9 +68,9 @@ Antes de ejecutar el proyecto, asegúrate de tener instalado lo siguiente:
 - [Java JDK](https://adoptium.net/) 21 o superior
 - [Gradle](https://gradle.org/) 9.0.0 o superior
 
-#### Paquetes de debes instalar
+## Paquetes de debes instalar
 
-##### Cliente web (Node.js)
+### Cliente web (Node.js)
 
 Desde la raíz del proyecto, instala las dependencias necesarias:
 
@@ -60,7 +82,7 @@ npm i --save-dev style-loader css-loader
 npm i axios
 ```
 
-##### Proxy (Node.js)
+### Proxy (Node.js)
 
 Desde la raíz del proyecto, instala las dependencias necesarias:
 
@@ -69,9 +91,9 @@ cd proxy
 npm i express cors axios
 ```
 
-#### Comandos para ejecutar
+## Comandos para ejecutar
 
-##### Server
+### Server
 
 En una terminal limpia sobre la raíz del proyecto, ejecuta la siguiente línea de comandos:
 
@@ -83,7 +105,8 @@ java -jar build/libs/server.jar
 
 Para confirmar que se ejecutó correctamente, debes ver en consola:
 `Server running on port: 5000`
-##### Proxy
+
+### Proxy
 
 En una terminal limpia sobre la raíz del proyecto, ejecuta la siguiente línea de comandos:
 
@@ -95,7 +118,7 @@ node Services.js
 Para confirmar que se ejecutó correctamente, debes ver en consola:
 `Proxy HTTP escuchando en http://localhost:3001`
 
-##### Web-client
+### Web-client
 
 En una terminal limpia sobre la raíz del proyecto, ejecuta la siguiente línea de comandos:
 
@@ -110,8 +133,8 @@ Para abrir la página web, deberás ir al enlace que sale tras ejecutar el coman
 <i> [webpack-dev-server] Loopback: http://localhost:3000/
 ```
 
----
-### Guía para ubicarse dentro de la página
+
+# Guía para ubicarse dentro de la página
 
 #### Home Page
 
