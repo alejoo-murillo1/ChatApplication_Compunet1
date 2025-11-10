@@ -122,26 +122,27 @@ public class MessageDao implements IDao<Pair<String, String>, List<Message>> {
         }
     }
 
-    public List<Message> saveSingle(Message message) {
-        Pair<String, String> key = normalizeKey(message.getSender(), message.getReceiver());
+    public List<Message> saveSingle(Message message, boolean isGroup) {
+        Pair<String, String> key;
 
+        if(!isGroup) {
+            key = normalizeKey(message.getSender(), message.getReceiver());
+        } else {
+            key = new Pair<>(message.getReceiver(), ""); //Solo nos importa el nombre del grupo
+        }
+        
         List<Message> existing = messages.getOrDefault(key, new ArrayList<>());
         existing.add(message);
         messages.put(key, existing);
         saveToFile();
+        
         return existing;
     }
 
-    // Devuelve todos los mensajes cuyo receiver sea groupName
+
     public List<Message> findByGroup(String groupName) {
-        List<Message> groupMessages = new ArrayList<>();
-        for (List<Message> msgs : messages.values()) {
-            for (Message m : msgs) {
-                if (m.getReceiver().equals(groupName)) {
-                    groupMessages.add(m);
-                }
-            }
-        }
-        return groupMessages;
+        Pair<String, String> key = new Pair<>(groupName, "");
+    
+        return messages.getOrDefault(key, new ArrayList<>());
     }
 }

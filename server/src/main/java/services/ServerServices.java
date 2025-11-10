@@ -1,5 +1,6 @@
 package services;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +29,14 @@ public class ServerServices {
             usersDao.save(newUser);
             System.out.println("The new user " + newUser.getName() + " was registered");
         }
+
+        return usersDao.finById(newUser.getName());
+    }
+
+    public User updateUser(String name, boolean online) {
+        User newUser = new User(name, online);
+        usersDao.update(newUser);
+        System.out.println("The user " + newUser.getName() + " has been updated. Online status: online = " + newUser.isOnline());
 
         return usersDao.finById(newUser.getName());
     }
@@ -73,7 +82,13 @@ public class ServerServices {
 
     synchronized public Message addMessage(String sender, String receiver, String msg) {
         Message newMessage = new Message(sender, receiver, msg);
-        messageDao.saveSingle(newMessage);
+
+        if(!isGroup(receiver)) {
+            messageDao.saveSingle(newMessage, false);
+        } else {
+            messageDao.saveSingle(newMessage, true);
+        }
+        
         return newMessage;
     }
 
@@ -92,6 +107,8 @@ public class ServerServices {
             return messageDao.findByGroup(receiver);
         }
     }
+
+
 
     public boolean isGroup(String name) {
         return groupDao.finById(name) != null;

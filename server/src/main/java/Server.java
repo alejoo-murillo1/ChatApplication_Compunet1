@@ -165,9 +165,9 @@ public class Server {
                 try {
                     String sender = rq.getData().get("sender").getAsString();
                     String receiver = rq.getData().get("receiver").getAsString();
-                    String message = rq.getData().get("message").getAsString();
+                    String content = rq.getData().get("message").getAsString();
 
-                    Message newMsg = services.addMessage(sender, receiver, message);
+                    Message newMsg = services.addMessage(sender, receiver, content);
                     System.out.println(newMsg);
 
                     if(newMsg != null){
@@ -206,6 +206,25 @@ public class Server {
                 } catch (Exception e) {
                     resp.setstatus("error");
                     resp.setData(gson.toJsonTree(Map.of("message", "Get messages failed")).getAsJsonObject());
+                    return resp;
+                }
+                break;
+            
+            case "logout_user":
+                try {
+                    String name = rq.getData().get("name").getAsString();
+                    boolean online = rq.getData().get("online").getAsBoolean();
+
+                    User newUser = services.updateUser(name, online);
+                    System.out.println(newUser);
+
+                    if(newUser != null){
+                        resp.setstatus("ok");
+                        resp.setData(gson.toJsonTree(newUser).getAsJsonObject());
+                    }
+                } catch (Exception e) {
+                    resp.setstatus("error");
+                    resp.setData(gson.toJsonTree(Map.of("message", "User update failed")).getAsJsonObject());
                     return resp;
                 }
                 break;

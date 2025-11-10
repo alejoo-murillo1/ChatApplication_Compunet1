@@ -31,14 +31,15 @@ export class Menu {
     chatsBtn.addEventListener("click", () => this.router.navigateTo("/chat"));
     groupsBtn.addEventListener("click", () => this.router.navigateTo("/groups"));
     logoutBtn.addEventListener("click", async () => {
-      const username = sessionStorage.getItem("username");
+      const success = await this.updateUserStatusToOffline(name);  
 
-      if (username) {
-        await this.updateUserStatusToOffline(username);
+      if (success) {
+        sessionStorage.clear();
+        this.router.navigateTo("/");
+      } else {
+        alert("No se pudo actualizar el estado del usuario")
       }
 
-      sessionStorage.clear();
-      this.router.navigateTo("/");
     });
 
     
@@ -59,12 +60,18 @@ export class Menu {
     try {
       const userData = {
         name: username,
-        status: "offline"
+        online: false
       };
 
       const response = await axios.put("http://localhost:3001/users/status", userData);
 
-      console.log("Estado actualizado:", response.data);
+      console.log("Respuesta del proxy:", response.data);
+      
+      if (response.data.status === "ok") {
+        console.log("Usuario actualizado correctamente:", response.data.body);
+        return true;
+      } 
+      return false;
     } catch (error) {
       console.error("Error al actualizar estado del usuario:", error);
     }

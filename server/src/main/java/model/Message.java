@@ -1,5 +1,7 @@
 package model;
 
+import java.time.Instant;
+
 public class Message {
     private String sender;
     private String receiver;
@@ -34,4 +36,5 @@ public class Message {
     public void setMessage(String message) {
         this.message = message;
     }
+
 }

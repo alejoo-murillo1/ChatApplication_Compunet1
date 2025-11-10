@@ -71,7 +71,7 @@ export class HomePage {
         console.log("Usuario registrado correctamente:", response.data.body);
         return true;
       } else {
-        console.warn("El servidor no aceptó el registro:", response.data.body);
+        console.log("El servidor no aceptó el registro:", response.data.body);
         return false;
       }
 

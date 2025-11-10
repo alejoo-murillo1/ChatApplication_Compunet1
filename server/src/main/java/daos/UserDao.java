@@ -93,7 +93,8 @@ public class UserDao implements IDao<String, User> {
     public User update(User newEntity) {
         String name = newEntity.getName();
         users.get(name).setOnline(newEntity.isOnline());
-
+        saveToFile();
+        
         return users.get(name);
     }
 
